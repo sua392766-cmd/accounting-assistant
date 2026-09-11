@@ -1171,12 +1171,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     if (data.vendor) receiptData.vendor = data.vendor;
     if (Array.isArray(data.items) && data.items.length) {
       receiptData.items = data.items.map(function (it) {
+        // AI가 "1,400원"/"5개"처럼 숫자 외 문자를 섞어 보내도 순수 숫자만 남긴다
+        const priceNum = it.price != null ? String(it.price).replace(/[^0-9.]/g, '') : '';
+        const qtyNum = it.qty != null ? String(it.qty).replace(/[^0-9.]/g, '') : '';
         return {
           name: it.name || '',
           spec: it.spec || '',
           unit: it.unit || '개',
-          price: it.price != null ? String(it.price) : '',
-          qty: (it.qty != null && it.qty !== '') ? it.qty : 1,
+          price: priceNum,
+          qty: qtyNum ? Number(qtyNum) : 1,
         };
       });
     }
@@ -1358,11 +1361,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     renderItemsEditor();
     refreshCurrentPreview();
   }
+  // 쉼표/원/개/공백 등 숫자가 아닌 문자가 섞여 들어와도(AI 인식 결과 등) 안전하게 숫자만 뽑아낸다
+  function toNumber(v) {
+    if (v == null) return 0;
+    const cleaned = String(v).replace(/[^0-9.]/g, '');
+    return cleaned ? Number(cleaned) || 0 : 0;
+  }
   function calcTotal() {
     return receiptData.items.reduce((sum, it) => {
-      const price = Number(String(it.price).replace(/,/g, '')) || 0;
-      const qty = Number(it.qty) || 0;
-      return sum + price * qty;
+      return sum + toNumber(it.price) * toNumber(it.qty);
     }, 0);
   }
   function updateTotalDisplay() {
