@@ -1,0 +1,7 @@
+{
+  "name": "receipt-form-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "영수증 자동서식 웹앱 - 백엔드 서버리스 함수 (api/recognize.js)"
+}

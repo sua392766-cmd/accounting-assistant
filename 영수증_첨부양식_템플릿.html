@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>영수증 첨부 양식</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 15.5mm 15mm 15.5mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Gulim", "굴림", "GulimChe", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+    color: #000;
+  }
+  .page {
+    width: 179mm;
+    margin: 0 auto;
+    background: #fff;
+    position: relative;
+  }
+  .title {
+    text-align: center;
+    font-size: 22pt;
+    font-weight: 700;
+    letter-spacing: 8px;
+    margin: 3mm 0 4.5mm 0;
+  }
+  .section-label {
+    font-weight: 700;
+    font-size: 11pt;
+    margin: 0 0 2mm 0;
+  }
+  table.info {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1.2px solid #000;
+    font-size: 10.5pt;
+    table-layout: fixed;
+    margin-bottom: 7.7mm;
+  }
+  table.info td {
+    border: 1px solid #000;
+    padding: 0 2.5mm;
+    vertical-align: middle;
+  }
+  table.info tr { height: 6.6mm; }
+  table.info tr:last-child { height: 7.7mm; }
+  table.info td.label {
+    width: 14.9%;
+    text-align: center;
+    font-weight: 400;
+    white-space: nowrap;
+    font-size: 10pt;
+  }
+  table.info td.value {
+    width: 33.9%;
+    text-align: center;
+  }
+  table.info td.label2 {
+    width: 15.5%;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 10pt;
+  }
+  table.info td.value2 {
+    width: 34.8%;
+    text-align: center;
+  }
+  table.info td.wide {
+    width: auto;
+    text-align: center;
+  }
+  table.info td.nowrap {
+    white-space: nowrap;
+  }
+  .attach-title {
+    text-align: center;
+    font-size: 15pt;
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin: 0 0 1.9mm 0;
+  }
+  .attach-box {
+    border: 1.2px solid #000;
+    height: 182mm;
+    padding: 5mm;
+    display: table;
+    table-layout: fixed;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  .attach-box-inner {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .attach-box img {
+    max-width: 100%;
+    max-height: 175mm;
+    object-fit: contain;
+    display: none;
+  }
+  .attach-box img.has-image {
+    display: block;
+  }
+  .image-remove-btn {
+    position: absolute;
+    top: 3mm;
+    right: 3mm;
+    padding: 1.5mm 3mm;
+    background: #fff;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    border-radius: 4px;
+    font-size: 9pt;
+    cursor: pointer;
+    display: none;
+  }
+  .image-remove-btn.visible {
+    display: block;
+  }
+  .attach-placeholder {
+    text-align: center;
+    color: #999;
+    font-size: 10.5pt;
+    line-height: 1.8;
+  }
+  .attach-placeholder.hidden {
+    display: none;
+  }
+  @media print {
+    .attach-placeholder {
+      display: none;
+    }
+  }
+  .upload-control {
+    margin-top: 4mm;
+  }
+  .upload-control input[type="file"] {
+    font-size: 9.5pt;
+  }
+  .status-msg {
+    max-width: 179mm;
+    margin: 3mm auto 0 auto;
+    padding: 2.5mm 3mm;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    text-align: center;
+  }
+  .status-msg.small-notice {
+    background: #fff2e8;
+    border: 1px solid #f0b87a;
+    color: #9a5a10;
+  }
+  .status-msg.hidden {
+    display: none;
+  }
+  @media print {
+    .upload-control {
+      display: none;
+    }
+    .status-msg {
+      display: none;
+    }
+    .image-remove-btn {
+      display: none !important;
+    }
+  }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 5.4mm;
+    font-size: 11pt;
+    font-weight: 700;
+  }
+  .footer .blank {
+    display: inline-block;
+    border-bottom: 1px solid #000;
+    min-width: 20mm;
+    text-align: center;
+    padding: 0 2mm;
+    font-weight: 400;
+  }
+  .stamp {
+    display: inline-block;
+    margin-left: 3mm;
+  }
+
+  /* 편집 가능한 입력란 표시 (화면에서만 보이고 인쇄 시 숨김) */
+  [contenteditable="true"] {
+    outline: none;
+  }
+  @media screen {
+    [contenteditable="true"] {
+      background: #fbfdff;
+      box-shadow: inset 0 0 0 1px #cfe3f7;
+      border-radius: 2px;
+      cursor: text;
+    }
+    [contenteditable="true"]:hover {
+      box-shadow: inset 0 0 0 1px #7fb2e8;
+    }
+    [contenteditable="true"]:focus {
+      background: #eef6ff;
+      box-shadow: inset 0 0 0 1.5px #3b82f6;
+    }
+    .edit-hint {
+      max-width: 179mm;
+      margin: 0 auto 4mm auto;
+      padding: 2.5mm 3mm;
+      background: #eef6ff;
+      border: 1px solid #bcd8f5;
+      border-radius: 4px;
+      font-size: 9.5pt;
+      color: #1e4d8f;
+      font-weight: 400;
+    }
+  }
+  @media print {
+    [contenteditable="true"] {
+      background: transparent;
+      box-shadow: none;
+    }
+    .edit-hint {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="edit-hint">💡 하늘색으로 표시된 칸을 클릭하면 바로 내용을 수정할 수 있습니다. (인쇄 시에는 표시되지 않습니다)</div>
+  <div class="page" id="page1">
+    <div class="title">영수증 첨부 양식</div>
+
+    <div class="section-label">1. 연구과제</div>
+    <table class="info">
+      <tr>
+        <td class="label">연구책임자소속</td>
+        <td class="value nowrap" contenteditable="true" data-field="orgName">원주의과대학 정신건강의학과</td>
+        <td class="label2 nowrap">연구책임자 성명</td>
+        <td class="value2" contenteditable="true" data-field="piName">민성호</td>
+      </tr>
+      <tr>
+        <td class="label">연구비지원기관</td>
+        <td class="value" contenteditable="true" data-field="fundingOrg">SAP</td>
+        <td class="label2 nowrap">과제번호</td>
+        <td class="value2" contenteditable="true" data-field="taskNumber">2025-71-0135</td>
+      </tr>
+      <tr>
+        <td class="label">연 구 과 제 명</td>
+        <td class="wide" colspan="3" contenteditable="true" data-field="taskName">2026년 원주시정신건강복지센터 통합정신건강증진사업</td>
+      </tr>
+      <tr>
+        <td class="label">비&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;고</td>
+        <td class="value" contenteditable="true" data-field="note"></td>
+        <td class="label2 nowrap">담당자 / 연락처</td>
+        <td class="value2 nowrap" contenteditable="true" data-field="contactInfo">박유정 / 033-746-0198 내선4</td>
+      </tr>
+    </table>
+
+    <div class="attach-title">영수증 첨부란</div>
+    <div class="attach-box" id="attachBox">
+      <div class="attach-box-inner">
+        <div class="attach-placeholder" id="attachPlaceholder">
+          (프로그램 연동 시, 인식된 영수증 이미지가 이 자리에 자동으로 삽입됩니다.
+          원본보다 축소되어 표시될 수 있습니다)
+          <div class="upload-control">
+            <label>테스트용 이미지 첨부: <input type="file" id="receiptFileInput" accept="image/*"></label>
+          </div>
+        </div>
+        <img id="receiptImage" alt="영수증 이미지">
+      </div>
+      <button type="button" class="image-remove-btn" id="removeImageBtn">✕ 이미지 삭제(공란으로)</button>
+    </div>
+
+    <div class="status-msg small-notice hidden" id="smallSizeNotice">
+      ⚠️ 사진이 작게 표시되어 알아보기 어려울 수 있습니다. 확인이 어려우면
+      위 이미지를 삭제하고 영수증을 별도로 출력해서 첨부해 주세요.
+    </div>
+
+    <div class="footer" id="footerBlock">
+      <div>영수증 합계(영수증 매수) : <span class="blank" contenteditable="true" id="totalAmount" data-field="totalAmountFormatted"></span>원 (&nbsp;<span class="blank" contenteditable="true" id="receiptCount" data-field="receiptCount" style="min-width:8mm;"></span>&nbsp;매)</div>
+      <div>연구책임자 : &nbsp;&nbsp;<span contenteditable="true" data-field="piName">민성호</span>&nbsp;&nbsp;<span class="stamp">(인)</span></div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('receiptFileInput');
+    const img = document.getElementById('receiptImage');
+    const attachBox = document.getElementById('attachBox');
+    const placeholder = document.getElementById('attachPlaceholder');
+    const smallSizeNotice = document.getElementById('smallSizeNotice');
+    const removeBtn = document.getElementById('removeImageBtn');
+
+    // 첨부란(박스) 내부 크기 (mm) - .attach-box 크기(185.1mm)에서 padding(5mm*2) 제외
+    const BOX_INNER_WIDTH_MM = 179 - 2 * 5;
+    const BOX_INNER_HEIGHT_MM = 182 - 2 * 5;
+    // "그대로(contain) 넣었을 때" 박스 폭의 이 비율보다 작아지면 "많이 작게 보인다"고 안내만 함
+    const SMALL_NOTICE_RATIO = 0.6;
+
+    function loadImageFromFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const image = new Image();
+          image.onload = () => resolve({ dataUrl: ev.target.result, image });
+          image.onerror = reject;
+          image.src = ev.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function clearImage() {
+      img.removeAttribute('src');
+      img.classList.remove('has-image');
+      placeholder.classList.remove('hidden');
+      removeBtn.classList.remove('visible');
+      smallSizeNotice.classList.add('hidden');
+      fileInput.value = '';
+    }
+
+    async function handleFile(file) {
+      if (!file) return;
+
+      const { dataUrl, image } = await loadImageFromFile(file);
+
+      // 이미지가 아무리 크거나 길어도 항상 첨부란 안에 축소해서 표시한다
+      // (자동으로 공란 처리하지 않음 — 삭제는 사용자가 직접 판단해서 버튼으로)
+      img.src = dataUrl;
+      img.classList.add('has-image');
+      placeholder.classList.add('hidden');
+      removeBtn.classList.add('visible');
+
+      const containScale = Math.min(
+        BOX_INNER_WIDTH_MM / image.naturalWidth,
+        BOX_INNER_HEIGHT_MM / image.naturalHeight
+      );
+      const containedWidthMM = image.naturalWidth * containScale;
+
+      if (containedWidthMM < BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO) {
+        smallSizeNotice.classList.remove('hidden');
+      } else {
+        smallSizeNotice.classList.add('hidden');
+      }
+    }
+
+    fileInput.addEventListener('change', function (e) {
+      handleFile(e.target.files[0]);
+    });
+
+    removeBtn.addEventListener('click', clearImage);
+
+    // ※ 실제 프로그램 연동 시: 인식된 영수증 이미지를 handleFile(recognizedReceiptFile)에
+    //   그대로 넘기면 됩니다. 이미지는 항상 첨부란 안에 맞춰 축소 표시되며, 사용자가
+    //   "이미지 삭제" 버튼을 누르면 공란으로 바뀌고 나머지 데이터(표 정보)는 그대로 유지됩니다.
+
+    // ==== 부모 앱(receiptData)과의 데이터 연동 브릿지 ====
+    function applyData(data) {
+      document.querySelectorAll('[data-field]').forEach(el => {
+        if (data[el.dataset.field] !== undefined) {
+          el.textContent = data[el.dataset.field];
+        }
+      });
+      if (data.receiptImageDataUrl) {
+        handleFileFromDataUrl(data.receiptImageDataUrl);
+      }
+    }
+    function handleFileFromDataUrl(dataUrl) {
+      const image = new Image();
+      image.onload = function () {
+        const containScale = Math.min(BOX_INNER_WIDTH_MM / image.naturalWidth, BOX_INNER_HEIGHT_MM / image.naturalHeight);
+        const containedWidthMM = image.naturalWidth * containScale;
+        img.src = dataUrl;
+        img.classList.add('has-image');
+        placeholder.classList.add('hidden');
+        removeBtn.classList.add('visible');
+        smallSizeNotice.classList.toggle('hidden', containedWidthMM >= BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO);
+      };
+      image.src = dataUrl;
+    }
+    window.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'setData') applyData(e.data.payload);
+    });
+    document.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
+      el.addEventListener('input', () => {
+        window.parent.postMessage({ type: 'fieldChanged', field: el.dataset.field, value: el.textContent }, '*');
+      });
+    });
+    window.parent.postMessage({ type: 'formReady' }, '*');
+  </script>
+</body>
+</html>

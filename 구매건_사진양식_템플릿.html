@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>구매건 사진양식 (변경형)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 15.5mm 15mm 15.5mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "HY헤드라인M", "HY Headline M", "Gulim", "굴림", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+    color: #000;
+  }
+  .page {
+    width: 179mm;
+    margin: 0 auto;
+    background: #fff;
+  }
+  .doc-tag {
+    font-size: 9.5pt;
+    margin: 1mm 0 4mm 0;
+  }
+  .doc-title {
+    text-align: center;
+    font-size: 17pt;
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin: 0 0 4mm 0;
+  }
+  table.purchase-photo {
+    width: 176mm;
+    margin: 0 auto;
+    border-collapse: collapse;
+    border: 1.2px solid #000;
+    font-size: 10.5pt;
+    table-layout: fixed;
+  }
+  table.purchase-photo td {
+    border: 1.2px solid #000;
+    padding: 0 3mm;
+    vertical-align: middle;
+  }
+  table.purchase-photo col.col-l { width: 50%; }
+  table.purchase-photo col.col-r { width: 50%; }
+
+  tr.row-center td { text-align: center; font-weight: 700; height: 7.9mm; }
+  tr.row-two td { text-align: left; height: 7.7mm; }
+  tr.row-two .field-pair {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+  tr.row-two .field-label {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+  tr.row-two .field-blank {
+    flex: 1 1 auto;
+    min-width: 6mm;
+  }
+  tr.row-caption td { text-align: center; font-weight: 700; height: 7.9mm; white-space: nowrap; font-size: 9.8pt; }
+
+  .photo-row td {
+    padding: 0;
+    height: 90mm;
+  }
+  .photo-cell {
+    height: 100%;
+    display: flex;
+  }
+  .cell-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    padding: 3mm;
+  }
+  .photo-cell img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: none;
+  }
+  .photo-cell img.has-image {
+    display: block;
+  }
+  .cell-placeholder {
+    text-align: center;
+    color: #999;
+    font-size: 9pt;
+  }
+  .cell-placeholder.hidden {
+    display: none;
+  }
+  .upload-input {
+    font-size: 9pt;
+  }
+  @media print {
+    .upload-input, .cell-placeholder {
+      display: none !important;
+    }
+  }
+
+  .edit-hint {
+    max-width: 179mm;
+    margin: 0 auto 4mm auto;
+    padding: 2.5mm 3mm;
+    background: #eef6ff;
+    border: 1px solid #bcd8f5;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    color: #1e4d8f;
+    font-weight: 400;
+  }
+  [contenteditable="true"] {
+    outline: none;
+  }
+  @media screen {
+    [contenteditable="true"] {
+      background: #fbfdff;
+      box-shadow: inset 0 0 0 1px #cfe3f7;
+      cursor: text;
+    }
+    [contenteditable="true"]:hover {
+      box-shadow: inset 0 0 0 1px #7fb2e8;
+    }
+    [contenteditable="true"]:focus {
+      background: #eef6ff;
+      box-shadow: inset 0 0 0 1.5px #3b82f6;
+    }
+  }
+  @media print {
+    [contenteditable="true"] {
+      background: transparent;
+      box-shadow: none;
+    }
+    .edit-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="edit-hint">💡 하늘색으로 표시된 칸을 클릭하면 바로 내용을 수정할 수 있습니다. 사진 칸을 클릭하면 이미지를 첨부할 수 있습니다. (인쇄 시에는 편집 표시가 사라집니다)</div>
+  <div class="page">
+    <div class="doc-tag">[별지 제4호 서식]</div>
+    <div class="doc-title">물품 설치 및 검수 증빙 자료</div>
+
+    <table class="purchase-photo">
+      <colgroup>
+        <col class="col-l"><col class="col-r">
+      </colgroup>
+      <tr class="row-center">
+        <td colspan="2" contenteditable="true" data-field="taskLine">과제번호 및 연구책임자명 : [민성호교수님]</td>
+      </tr>
+      <tr class="row-two">
+        <td>
+          <div class="field-pair">
+            <span class="field-label">품명 :</span>
+            <span class="field-blank" contenteditable="true" data-field="itemSummary"></span>
+          </div>
+        </td>
+        <td>
+          <div class="field-pair">
+            <span class="field-label">신청번호 및 PO :</span>
+            <span class="field-blank" contenteditable="true"></span>
+          </div>
+        </td>
+      </tr>
+      <tr class="row-center">
+        <td colspan="2" contenteditable="true" data-field="placeLine">설치장소 : 원주시정신건강복지센터</td>
+      </tr>
+      <tr class="row-center">
+        <td colspan="2" contenteditable="true" data-field="dateLine">설치 일자 및 검수 일자 : 2026년 9월 8일</td>
+      </tr>
+      <tr class="row-center">
+        <td colspan="2" contenteditable="true" data-field="inspectorLine">검수자 : 박유정 (인)</td>
+      </tr>
+      <tr class="row-caption">
+        <td contenteditable="true">&lt;납품된 상태 사진&gt;</td>
+        <td contenteditable="true">&lt;물품이 선명하게 보이는 사진/ 물품 전체사진&gt;</td>
+      </tr>
+      <tr class="photo-row">
+        <td><div class="photo-cell">
+            <div class="cell-body">
+              <div class="cell-placeholder" id="ph-a">
+                <input type="file" class="upload-input" accept="image/*" id="file-a">
+              </div>
+              <img alt="사진" id="img-a">
+            </div>
+          </div></td>
+        <td><div class="photo-cell">
+            <div class="cell-body">
+              <div class="cell-placeholder" id="ph-b">
+                <input type="file" class="upload-input" accept="image/*" id="file-b">
+              </div>
+              <img alt="사진" id="img-b">
+            </div>
+          </div></td>
+      </tr>
+      <tr class="row-caption">
+        <td contenteditable="true">&lt;물품이 설치된 장소 전체 사진(연구실)&gt;</td>
+        <td contenteditable="true">&lt;설치호수 출입문 사진&gt;</td>
+      </tr>
+      <tr class="photo-row">
+        <td><div class="photo-cell">
+            <div class="cell-body">
+              <div class="cell-placeholder" id="ph-c">
+                <input type="file" class="upload-input" accept="image/*" id="file-c">
+              </div>
+              <img alt="사진" id="img-c">
+            </div>
+          </div></td>
+        <td><div class="photo-cell">
+            <div class="cell-body">
+              <div class="cell-placeholder" id="ph-d">
+                <input type="file" class="upload-input" accept="image/*" id="file-d">
+              </div>
+              <img alt="사진" id="img-d">
+            </div>
+          </div></td>
+      </tr>
+    </table>
+  </div>
+
+  <script>
+    ['a','b','c','d'].forEach(function(id) {
+      const input = document.getElementById('file-' + id);
+      const img = document.getElementById('img-' + id);
+      const ph = document.getElementById('ph-' + id);
+      input.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          img.src = ev.target.result;
+          img.classList.add('has-image');
+          ph.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // ※ 실제 프로그램 연동 시: 각 img.src를 인식된 사진으로 채우고
+    //   img.classList.add('has-image'); ph.classList.add('hidden'); 를 호출하면 됩니다.
+    //   (4칸: a=납품 상태, b=물품 전체, c=설치 장소, d=출입문)
+
+    function applyData(data) {
+      document.querySelectorAll('[data-field]').forEach(el => {
+        if (data[el.dataset.field] !== undefined) el.textContent = data[el.dataset.field];
+      });
+    }
+    window.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'setData') applyData(e.data.payload);
+    });
+    document.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
+      el.addEventListener('input', () => {
+        window.parent.postMessage({ type: 'fieldChanged', field: el.dataset.field, value: el.textContent }, '*');
+      });
+    });
+    window.parent.postMessage({ type: 'formReady' }, '*');
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>물품검수조서 (2)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 15.5mm 15mm 15.5mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Gulim", "굴림", "GulimChe", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+    color: #000;
+  }
+  .page {
+    width: 179mm;
+    margin: 0 auto;
+    background: #fff;
+    position: relative;
+  }
+  table.gumsu2 {
+    width: 163mm;
+    margin: 14.8mm auto 0 auto;
+    border-collapse: collapse;
+    border: 1.2px solid #000;
+    font-size: 10.5pt;
+  }
+  table.gumsu2 td, table.gumsu2 th {
+    border: 1.2px solid #000;
+    padding: 0 1.5mm;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  table.gumsu2 col.c-item   { width: 27.6%; }
+  table.gumsu2 col.c-spec   { width: 20.6%; }
+  table.gumsu2 col.c-unit   { width: 6.4%; }
+  table.gumsu2 col.c-price  { width: 15.2%; }
+  table.gumsu2 col.c-qty    { width: 15.1%; }
+  table.gumsu2 col.c-unfilled { width: 15.1%; }
+
+  table.gumsu2 thead th {
+    background: #ffff99;
+    font-weight: 700;
+    font-size: 11pt;
+    height: 13mm;
+    line-height: 1.1;
+  }
+  table.gumsu2 tbody tr td {
+    height: 13mm;
+  }
+  table.gumsu2 tbody tr.total-row td { font-weight: 400; }
+  table.gumsu2 td.c-item { text-align: center; }
+  table.gumsu2 td.c-price {
+    text-align: right;
+    padding-right: 4mm;
+  }
+  table.gumsu2 .note-cell {
+    color: #444;
+  }
+
+  /* 편집 가능한 입력란 표시 (화면에서만 보이고 인쇄 시 숨김) */
+  [contenteditable="true"] {
+    outline: none;
+  }
+  @media screen {
+    [contenteditable="true"] {
+      background: #fbfdff;
+      box-shadow: inset 0 0 0 1px #cfe3f7;
+      cursor: text;
+    }
+    [contenteditable="true"]:hover {
+      box-shadow: inset 0 0 0 1px #7fb2e8;
+    }
+    [contenteditable="true"]:focus {
+      background: #eef6ff;
+      box-shadow: inset 0 0 0 1.5px #3b82f6;
+    }
+    .edit-hint {
+      max-width: 179mm;
+      margin: 0 auto 4mm auto;
+      padding: 2.5mm 3mm;
+      background: #eef6ff;
+      border: 1px solid #bcd8f5;
+      border-radius: 4px;
+      font-size: 9.5pt;
+      color: #1e4d8f;
+      font-weight: 400;
+    }
+  }
+  @media print {
+    [contenteditable="true"] {
+      background: transparent;
+      box-shadow: none;
+    }
+    .edit-hint {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="edit-hint">💡 하늘색으로 표시된 칸을 클릭하면 바로 내용을 수정할 수 있습니다. (인쇄 시에는 표시되지 않습니다)</div>
+  <div class="page">
+    <table class="gumsu2">
+      <colgroup>
+        <col class="c-item">
+        <col class="c-spec">
+        <col class="c-unit">
+        <col class="c-price">
+        <col class="c-qty">
+        <col class="c-unfilled">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>품목</th>
+          <th>규격</th>
+          <th>단위</th>
+          <th>단가(원)</th>
+          <th>금회<br>검수량</th>
+          <th>미납량</th>
+        </tr>
+      </thead>
+      <tbody id="itemsBody">
+        <tr class="total-row">
+          <td contenteditable="true">계</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td contenteditable="true" id="totalQtyCell">52</td>
+          <td></td>
+        </tr>
+        <tr id="itemRowsStart"></tr>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    function rowHtml(item) {
+      return '<tr>' +
+        '<td class="c-item" contenteditable="true">' + (item.name || '') + '</td>' +
+        '<td class="c-spec" contenteditable="true">' + (item.spec || '') + '</td>' +
+        '<td class="c-unit" contenteditable="true">' + (item.unit || '') + '</td>' +
+        '<td class="c-price" contenteditable="true">' + (item.price || '') + '</td>' +
+        '<td class="c-qty" contenteditable="true">' + (item.qty || '') + '</td>' +
+        '<td class="c-unfilled" contenteditable="true"></td>' +
+        '</tr>';
+    }
+    function emptyRowHtml() {
+      return '<tr><td class="c-item" contenteditable="true"></td><td class="c-spec" contenteditable="true"></td>' +
+        '<td class="c-unit" contenteditable="true"></td><td class="c-price" contenteditable="true"></td>' +
+        '<td class="c-qty" contenteditable="true"></td><td class="c-unfilled" contenteditable="true"></td></tr>';
+    }
+    function renderItems(items) {
+      const marker = document.getElementById('itemRowsStart');
+      // 기존 품목 행 전부 제거 (marker 제외)
+      let node = marker.nextSibling;
+      while (node) { const next = node.nextSibling; node.remove(); node = next; }
+
+      let html = '';
+      let totalQty = 0;
+      items.forEach(function (item) {
+        html += rowHtml(item);
+        totalQty += Number(item.qty) || 0;
+      });
+      html += '<tr class="item-row"><td></td><td class="note-cell" contenteditable="true">이하 여백</td><td></td><td></td><td></td><td></td></tr>';
+      for (let i = 0; i < 3; i++) html += emptyRowHtml();
+
+      marker.insertAdjacentHTML('afterend', html);
+      document.getElementById('totalQtyCell').textContent = totalQty;
+    }
+
+    function applyData(data) {
+      if (data.items) renderItems(data.items);
+    }
+    window.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'setData') applyData(e.data.payload);
+    });
+    window.parent.postMessage({ type: 'formReady' }, '*');
+  </script>
+</body>
+</html>

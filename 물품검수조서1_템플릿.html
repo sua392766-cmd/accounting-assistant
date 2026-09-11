@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>물품검수조서 (1)</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 15.5mm 15mm 15.5mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Gulim", "굴림", "GulimChe", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+    color: #000;
+  }
+  .page {
+    width: 179mm;
+    margin: 0 auto;
+    background: #fff;
+    position: relative;
+  }
+  .doc-box {
+    width: 173mm;
+    margin: 14.8mm auto 0 auto;
+    border: 1.2px solid #000;
+  }
+  .doc-title {
+    text-align: center;
+    font-size: 24pt;
+    font-weight: 700;
+    letter-spacing: 10px;
+    padding: 11mm 0 11mm 0;
+  }
+  table.gumsu {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1.2px solid #000;
+    font-size: 11pt;
+  }
+  table.gumsu td {
+    border: 1.2px solid #000;
+    padding: 0 3mm;
+    vertical-align: middle;
+  }
+  table.gumsu tr:nth-child(1) td { height: 12.4mm; }
+  table.gumsu tr:nth-child(2) td { height: 12.6mm; }
+  table.gumsu tr:nth-child(3) td { height: 12.4mm; }
+  table.gumsu tr:nth-child(4) td { height: 12.0mm; }
+  table.gumsu tr:nth-child(5) td { height: 11.7mm; }
+  table.gumsu tr:nth-child(6) td { height: 10.8mm; }
+  table.gumsu td.label {
+    width: 23.5%;
+    text-align: center;
+    font-weight: 700;
+    background: #fff;
+    white-space: nowrap;
+    border-left: none;
+  }
+  table.gumsu td.value {
+    width: 76.5%;
+    text-align: center;
+    border-right: none;
+  }
+  table.gumsu td.value.split {
+    text-align: left;
+    padding-left: 12%;
+  }
+  table.gumsu td.value.split .korean-amount {
+    margin-left: 18%;
+  }
+  .text-area {
+    padding: 19mm 8mm 16mm 8mm;
+  }
+  .text-area .confirm-line {
+    text-align: center;
+    font-size: 12pt;
+    margin: 0;
+  }
+  .text-area .date-line {
+    text-align: center;
+    font-size: 12pt;
+    margin: 28mm 0 0 0;
+  }
+  .signee-line {
+    display: flex;
+    align-items: baseline;
+    font-size: 11.5pt;
+    margin-left: 24.8mm;
+  }
+  .signee-line.first { margin-top: 19mm; }
+  .signee-line.second { margin-top: 11mm; }
+  .signee-role {
+    font-weight: 700;
+    width: 15mm;
+    flex-shrink: 0;
+  }
+  .signee-org {
+    width: 52mm;
+    flex-shrink: 0;
+  }
+  .signee-name-label {
+    font-weight: 700;
+    width: 14mm;
+    flex-shrink: 0;
+  }
+  .signee-name {
+    flex: 1;
+  }
+
+  /* 편집 가능한 입력란 표시 (화면에서만 보이고 인쇄 시 숨김) */
+  [contenteditable="true"] {
+    outline: none;
+  }
+  @media screen {
+    [contenteditable="true"] {
+      background: #fbfdff;
+      box-shadow: inset 0 0 0 1px #cfe3f7;
+      border-radius: 2px;
+      cursor: text;
+    }
+    [contenteditable="true"]:hover {
+      box-shadow: inset 0 0 0 1px #7fb2e8;
+    }
+    [contenteditable="true"]:focus {
+      background: #eef6ff;
+      box-shadow: inset 0 0 0 1.5px #3b82f6;
+    }
+    .edit-hint {
+      max-width: 179mm;
+      margin: 0 auto 4mm auto;
+      padding: 2.5mm 3mm;
+      background: #eef6ff;
+      border: 1px solid #bcd8f5;
+      border-radius: 4px;
+      font-size: 9.5pt;
+      color: #1e4d8f;
+      font-weight: 400;
+    }
+  }
+  @media print {
+    [contenteditable="true"] {
+      background: transparent;
+      box-shadow: none;
+    }
+    .edit-hint {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="edit-hint">💡 하늘색으로 표시된 칸을 클릭하면 바로 내용을 수정할 수 있습니다. (인쇄 시에는 표시되지 않습니다)</div>
+  <div class="page">
+    <div class="doc-box">
+      <div class="doc-title">물품검수조서</div>
+
+      <table class="gumsu">
+        <tr>
+          <td class="label">품목수량</td>
+          <td class="value" contenteditable="true" data-field="itemSummary">이면에 기재</td>
+        </tr>
+        <tr>
+          <td class="label">납&nbsp;품&nbsp;자</td>
+          <td class="value" contenteditable="true" data-field="vendorName">든든문구 원주점</td>
+        </tr>
+        <tr>
+          <td class="label">총&nbsp;금&nbsp;액</td>
+          <td class="value split">
+            <span contenteditable="true" data-field="totalAmountFormatted">금162,100원</span>
+            <span class="korean-amount" contenteditable="true" data-field="totalAmountKorean">(금십육만이천백원)</span>
+          </td>
+        </tr>
+        <tr>
+          <td class="label">납품일자</td>
+          <td class="value" contenteditable="true" data-field="deliveryDate">2026년 9월 8일</td>
+        </tr>
+        <tr>
+          <td class="label">검수년월일</td>
+          <td class="value" contenteditable="true" data-field="inspectionDate">2026년 9월 8일</td>
+        </tr>
+        <tr>
+          <td class="label">검수장소</td>
+          <td class="value" contenteditable="true" data-field="inspectionPlace">원주시정신건강복지센터</td>
+        </tr>
+      </table>
+
+      <div class="text-area">
+        <p class="confirm-line">위와 같이 검수하였음.</p>
+        <p class="date-line" contenteditable="true" data-field="inspectionDate">2026년 9월 8일</p>
+
+        <div class="signee-line first">
+          <span class="signee-role">검수자</span>
+          <span class="signee-org" contenteditable="true" data-field="inspectionPlace">원주시정신건강복지센터</span>
+          <span class="signee-name-label">성명</span>
+          <span class="signee-name" contenteditable="true" data-field="inspectorNameStamp">박유정 (인)</span>
+        </div>
+        <div class="signee-line second">
+          <span class="signee-role">입회자</span>
+          <span class="signee-org" contenteditable="true" data-field="inspectionPlace">원주시정신건강복지센터</span>
+          <span class="signee-name-label">성명</span>
+          <span class="signee-name" contenteditable="true" data-field="witnessNameStamp">염미애 (인)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function applyData(data) {
+      document.querySelectorAll('[data-field]').forEach(el => {
+        if (data[el.dataset.field] !== undefined) el.textContent = data[el.dataset.field];
+      });
+    }
+    window.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'setData') applyData(e.data.payload);
+    });
+    document.querySelectorAll('[contenteditable="true"][data-field]').forEach(el => {
+      el.addEventListener('input', () => {
+        window.parent.postMessage({ type: 'fieldChanged', field: el.dataset.field, value: el.textContent }, '*');
+      });
+    });
+    window.parent.postMessage({ type: 'formReady' }, '*');
+  </script>
+</body>
+</html>

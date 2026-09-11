@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>사진 첨부 양식</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 15.5mm 15mm 15.5mm;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Gulim", "굴림", "GulimChe", "Malgun Gothic", "Noto Sans CJK KR", sans-serif;
+    color: #000;
+  }
+  .page {
+    width: 179mm;
+    margin: 0 auto;
+    background: #fff;
+  }
+  .doc-box {
+    border: 1.2px solid #000;
+  }
+  .doc-title {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: 700;
+    letter-spacing: 6px;
+    padding: 3mm 0;
+    border-bottom: 1.2px solid #000;
+  }
+  .photo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .photo-grid.single {
+    grid-template-columns: 1fr;
+  }
+  .photo-cell {
+    border: 1px solid #000;
+    margin: -1px 0 0 -1px;
+    height: 80mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .photo-grid.single .photo-cell {
+    height: 240mm;
+  }
+  .photo-cell .cell-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    padding: 3mm;
+  }
+  .photo-cell img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: none;
+  }
+  .photo-cell img.has-image {
+    display: block;
+  }
+  .cell-placeholder {
+    text-align: center;
+    color: #999;
+    font-size: 9.5pt;
+    line-height: 1.8;
+  }
+  .cell-placeholder.hidden {
+    display: none;
+  }
+  .cell-caption {
+    text-align: center;
+    font-size: 9.5pt;
+    padding: 1.5mm 2mm;
+    border-top: 1px dashed #ccc;
+    color: #333;
+  }
+  .cell-caption:empty::before {
+    content: "(사진 설명 입력 - 예: 납품 상태 / 물품 전체 / 설치 장소 / 출입문)";
+    color: #bbb;
+  }
+  .cell-remove {
+    position: absolute;
+    top: 2mm;
+    right: 2mm;
+    width: 6mm;
+    height: 6mm;
+    border-radius: 50%;
+    background: #f2f2f2;
+    border: 1px solid #ccc;
+    font-size: 8pt;
+    line-height: 1;
+    cursor: pointer;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toolbar {
+    max-width: 179mm;
+    margin: 0 auto 3mm auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9.5pt;
+  }
+  .toolbar button {
+    font-size: 9.5pt;
+    padding: 1.5mm 4mm;
+    border: 1px solid #7fb2e8;
+    background: #eef6ff;
+    color: #1e4d8f;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .toolbar button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .slot-count-label {
+    color: #555;
+  }
+  @media print {
+    .toolbar, .cell-remove, .cell-placeholder, .upload-input {
+      display: none !important;
+    }
+    .cell-caption:empty::before {
+      content: "";
+    }
+  }
+  .edit-hint {
+    max-width: 179mm;
+    margin: 0 auto 4mm auto;
+    padding: 2.5mm 3mm;
+    background: #eef6ff;
+    border: 1px solid #bcd8f5;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    color: #1e4d8f;
+    font-weight: 400;
+  }
+  [contenteditable="true"] {
+    outline: none;
+  }
+  [contenteditable="true"]:focus {
+    background: #eef6ff;
+  }
+  @media print {
+    .edit-hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="edit-hint">💡 사진 칸을 클릭해서 이미지를 첨부하고, 하단 설명란은 클릭해서 텍스트를 수정할 수 있습니다. (인쇄 시 버튼·안내문은 표시되지 않습니다)</div>
+
+  <div class="toolbar">
+    <span class="slot-count-label">사진 칸: <span id="slotCountLabel">1</span>장 (최소 1장 ~ 최대 6장)</span>
+    <span>
+      <button id="removeSlotBtn" type="button">− 칸 삭제</button>
+      <button id="addSlotBtn" type="button">+ 칸 추가</button>
+    </span>
+  </div>
+
+  <div class="page">
+    <div class="doc-box">
+      <div class="doc-title">첨부 사진</div>
+      <div class="photo-grid single" id="photoGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const MIN_SLOTS = 1;
+    const MAX_SLOTS = 6;
+    const grid = document.getElementById('photoGrid');
+    const addBtn = document.getElementById('addSlotBtn');
+    const removeBtn = document.getElementById('removeSlotBtn');
+    const countLabel = document.getElementById('slotCountLabel');
+
+    function createCell() {
+      const cell = document.createElement('div');
+      cell.className = 'photo-cell';
+      cell.innerHTML = `
+        <button type="button" class="cell-remove" title="이 칸 삭제">✕</button>
+        <div class="cell-body">
+          <div class="cell-placeholder">
+            (프로그램 연동 시, 인식된 사진이 이 자리에 자동으로 삽입됩니다)<br>
+            <input type="file" class="upload-input" accept="image/*">
+          </div>
+          <img alt="첨부 사진">
+        </div>
+        <div class="cell-caption" contenteditable="true"></div>
+      `;
+
+      const input = cell.querySelector('.upload-input');
+      const img = cell.querySelector('img');
+      const placeholder = cell.querySelector('.cell-placeholder');
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          img.src = ev.target.result;
+          img.classList.add('has-image');
+          placeholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      cell.querySelector('.cell-remove').addEventListener('click', () => {
+        if (grid.children.length <= MIN_SLOTS) return;
+        cell.remove();
+        updateUI();
+      });
+
+      return cell;
+    }
+
+    function updateUI() {
+      const count = grid.children.length;
+      countLabel.textContent = count;
+      grid.classList.toggle('single', count === 1);
+      addBtn.disabled = count >= MAX_SLOTS;
+      removeBtn.disabled = count <= MIN_SLOTS;
+    }
+
+    addBtn.addEventListener('click', () => {
+      if (grid.children.length >= MAX_SLOTS) return;
+      grid.appendChild(createCell());
+      updateUI();
+    });
+
+    removeBtn.addEventListener('click', () => {
+      if (grid.children.length <= MIN_SLOTS) return;
+      grid.removeChild(grid.lastElementChild);
+      updateUI();
+    });
+
+    // 초기 1칸 생성
+    grid.appendChild(createCell());
+    updateUI();
+
+    // ※ 실제 프로그램 연동 시: 각 셀의 img.src를 인식된 사진으로 채우고
+    //   img.classList.add('has-image'); placeholder.classList.add('hidden'); 를 호출하면 됩니다.
+
+    window.addEventListener('message', function (e) {
+      // 사진 첨부양식은 사용자가 직접 첨부하는 화면이라 별도 텍스트 데이터 바인딩은 없음
+    });
+    window.parent.postMessage({ type: 'formReady' }, '*');
+  </script>
+</body>
+</html>
