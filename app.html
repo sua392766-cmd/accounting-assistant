@@ -284,8 +284,9 @@
   }
   .checklist-col-list .preview-list { flex: 1; width: auto; }
   .checklist-col-notice {
-    width: 260px;
-    flex-shrink: 0;
+    /* grow:0(여유 공간을 가져가지 않음) shrink:1(폭이 좁아지면 이 칸부터 먼저 줄어듦) */
+    flex: 0 1 260px;
+    min-width: 140px;
     overflow-y: auto;
   }
   .checklist-col-list .budget-bar select,
@@ -533,10 +534,11 @@
     color: #333;
   }
   .preview-pane-wrap {
-    flex: 1;
+    /* grow:1(여유 공간은 여기가 다 가져감) shrink:0(줄어들지 않음, 오른쪽 협조사항 칸이 먼저 줄어듦) */
+    flex: 1 0 380px;
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    min-width: 380px;
   }
   .preview-toolbar {
     display: flex;
