@@ -541,6 +541,48 @@
     border-radius: 6px;
     background: #fff;
   }
+
+  /* ---- 개인설정 화면 ---- */
+  .settings-section {
+    border-top: 1px solid #eee;
+    padding-top: 18px;
+    margin-top: 18px;
+  }
+  .settings-section:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+  .settings-section h3 { font-size: 15px; margin: 0 0 12px 0; }
+  .settings-subsection { margin-top: 14px; }
+  .settings-subsection h4 { font-size: 12.5px; color: #555; margin: 0 0 6px 0; }
+  .settings-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+  .settings-table th, .settings-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+  .settings-table th { background: #f7f7f7; font-size: 12px; }
+  .settings-table input { width: 100%; border: none; font-size: 13px; padding: 4px; }
+  .settings-table input:focus { background: #eef6ff; outline: none; }
+  .settings-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .settings-list-row input {
+    flex: 1; font-size: 13px; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .settings-doc-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .settings-doc-row input[type="text"] {
+    flex: 1; min-width: 160px; font-size: 13px; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .settings-doc-row label { font-size: 12.5px; color: #555; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+  .settings-doc-row select { font-size: 12.5px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; }
+  .ai-model-row {
+    display: flex; align-items: center; gap: 8px; padding: 9px 10px;
+    border: 1px solid #ccc; border-radius: 6px; margin-bottom: 6px; font-size: 13.5px; cursor: pointer;
+  }
+  .ai-model-row.disabled { opacity: 0.5; cursor: default; }
+  .ai-model-row em { font-style: normal; color: #888; font-size: 12px; }
+  .budget-group-card {
+    border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;
+  }
+  .budget-group-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .budget-group-header input {
+    flex: 1; font-size: 13.5px; font-weight: bold; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .budget-subs-list { padding-left: 16px; }
 </style>
 </head>
 <body>
@@ -558,7 +600,7 @@
     <div class="home-menu">
       <button class="main" onclick="startFlow()">새 영수증 처리 시작</button>
       <button onclick="showScreen('ledger')">회계처리 목록</button>
-      <button onclick="showScreen('settings')">개인설정</button>
+      <button onclick="openSettings()">개인설정</button>
     </div>
   </div>
 
@@ -600,7 +642,8 @@
             </div>
             <div class="field">
               <label>연구과제명</label>
-              <input type="text" id="f_taskName" onchange="onConfirmFieldChange()">
+              <input type="text" id="f_taskName" list="projectsDatalist" onchange="onTaskNameChange()">
+              <datalist id="projectsDatalist"></datalist>
             </div>
             <div class="field">
               <label>과제번호</label>
@@ -693,6 +736,7 @@
           <button class="link-btn" id="downloadFormBtn" onclick="printCurrentForm()">🖨 이 서식 인쇄</button>
         </div>
         <div class="print-hint">💡 인쇄 대화상자가 뜨면 "더보기 옵션"(또는 "자세히")에서 "머리글 및 바닥글" 체크를 해제한 뒤 인쇄하세요. (URL·날짜가 함께 인쇄되는 것을 막기 위함)</div>
+        <div class="print-hint" id="formPrintNotesBox" style="display:none;"></div>
         <iframe class="preview-pane" id="previewPane"></iframe>
       </div>
     </div>
@@ -732,8 +776,86 @@
   <!-- 개인설정 -->
   <div class="screen" id="screen-settings">
     <h1>개인설정</h1>
-    <p class="desc">이름, AI 모델, 연구과제명, 예산구분, 필요서류·인쇄주의사항 등을 관리합니다.</p>
-    <div class="placeholder-box">(기본정보 / AI 모델 선택 / 연구과제 목록 / 예산구분 목록 / 필요서류·인쇄주의사항 관리 자리)</div>
+    <p class="desc">이름, AI 모델, 연구과제명, 예산구분, 필요서류·인쇄주의사항 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.</p>
+
+    <div class="settings-section">
+      <h3>1. 기본 정보</h3>
+      <div class="confirm-grid">
+        <div class="field"><label>본인 이름</label><input type="text" id="s_myName" onchange="onProfileChange()"></div>
+        <div class="field"><label>연구책임자소속</label><input type="text" id="s_orgName" onchange="onProfileChange()"></div>
+        <div class="field"><label>연구책임자 성명</label><input type="text" id="s_piName" onchange="onProfileChange()"></div>
+        <div class="field"><label>담당자 / 연락처</label><input type="text" id="s_contactInfo" onchange="onProfileChange()"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>2. AI 모델 선택</h3>
+      <div id="aiModelOptions"></div>
+    </div>
+
+    <div class="settings-section">
+      <h3>3. 연구과제명 목록</h3>
+      <table class="settings-table">
+        <thead><tr><th>연구과제명</th><th>과제번호(SAP)</th><th></th></tr></thead>
+        <tbody id="projectsTableBody"></tbody>
+      </table>
+      <button class="link-btn" onclick="addProject()">+ 과제 추가</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>4. 예산 구분 (목 - 세부사업명)</h3>
+      <div id="budgetGroupsList"></div>
+      <button class="link-btn" onclick="addBudgetGroup()">+ 목 추가</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>5. 필요서류 마스터 데이터 관리</h3>
+      <div class="budget-bar">
+        <label for="docsEditCategory">예산 항목 성격 선택</label>
+        <select id="docsEditCategory" onchange="renderDocsEditor()">
+          <option value="general">일반구매(물품)</option>
+          <option value="lecture">강사비</option>
+          <option value="business">업무추진비</option>
+          <option value="education">교육참가비</option>
+          <option value="meal">식사·도시락·다과비</option>
+          <option value="travel">여비</option>
+          <option value="fuel">주유비</option>
+          <option value="utility">공공요금·우편발송</option>
+        </select>
+      </div>
+      <div class="settings-subsection">
+        <h4>📌 공통 필수 확인사항 (모든 항목 공통)</h4>
+        <div id="commonNoticesEditor"></div>
+      </div>
+      <div class="settings-subsection">
+        <h4>💡 자동 안내 문구</h4>
+        <div id="blueNotesEditor"></div>
+      </div>
+      <div class="settings-subsection">
+        <h4>⚠ 주의사항 문구</h4>
+        <div id="orangeNotesEditor"></div>
+      </div>
+      <div class="settings-subsection">
+        <h4>필요서류 목록</h4>
+        <div id="docsListEditor"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>6. 서식별 인쇄 주의사항 관리</h3>
+      <div class="budget-bar">
+        <label for="printNoteFormSelect">서식 선택</label>
+        <select id="printNoteFormSelect" onchange="renderPrintNoteEditor()">
+          <option value="receipt">영수증 첨부양식</option>
+          <option value="gumsu1">물품검수조서 1</option>
+          <option value="gumsu2">물품검수조서 2</option>
+          <option value="photo">사진 첨부양식</option>
+          <option value="purchasePhoto">구매건 사진양식</option>
+        </select>
+      </div>
+      <div id="printNoteEditor"></div>
+    </div>
+
     <div class="btn-row">
       <button class="secondary" onclick="goHome()">홈으로</button>
     </div>
@@ -790,7 +912,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // ------------------------------------------------------------------
 
   // 예산 항목 성격에 상관없이 항상 지켜야 하는 공통 사항 (체크리스트 4번)
-  const COMMON_NOTES = [
+  const DEFAULT_COMMON_NOTICES = [
     '비고란: "목-세부사업명-내용-담당자이름" 형식 준수 (예: 수용비-센터운용물품비-A4용지 구입-담당자이름)',
     '3·6·9·12월 마지막 주 카드 사용 시, 해당 주 내 영수증 제출 필수',
     '배송비: 견적서·거래명세서에 별도 기재 없이 타 품목 금액에 포함 처리',
@@ -799,7 +921,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     '연초(과제 생성 전) 지출: 현금영수증(566-82-00471) 처리, 개인카드 사용 불가 (단, 교통비는 개인카드 가능)',
   ];
 
-  const CATEGORY_DOCS = {
+  const DEFAULT_CATEGORY_DOCS = {
     general: {
       blue: [
         '견적서 작성일: 관외 결제 1주일 전, 관내 결제 당일~하루 전 (휴무일·공휴일 불가 / 마트·다이소·치료비 등은 견적서·거래명세서 제외 가능)',
@@ -933,6 +1055,68 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     },
   };
 
+  // ============================================================
+  // 개인설정 (3단계): 기본정보 / AI 모델 / 연구과제 / 예산구분 / 필요서류·인쇄주의사항
+  // 이 브라우저의 localStorage에 저장된다 (다른 컴퓨터·브라우저와는 공유되지 않음).
+  // 위의 DEFAULT_* 값들은 저장된 설정이 아직 없을 때(최초 실행)만 쓰이는 시드 데이터.
+  // ============================================================
+  const SETTINGS_STORAGE_KEY = 'receiptAppSettings_v1';
+
+  function defaultSettings() {
+    return {
+      profile: {
+        myName: '',
+        orgName: '원주의과대학 정신건강의학과',
+        piName: '민성호',
+        contactInfo: '박유정 / 033-746-0198 내선4',
+      },
+      aiModel: 'gemini',
+      projects: [
+        { name: '2026년 원주시정신건강복지센터 통합정신건강증진사업', number: '2025-71-0135' },
+      ],
+      budgetGroups: [
+        { mok: '수용비', subs: ['센터운용물품비'] },
+      ],
+      commonNotices: DEFAULT_COMMON_NOTICES.slice(),
+      categoryDocs: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_DOCS)),
+      printNotes: {
+        receipt: [],
+        gumsu1: ['검수자·입회자 도장은 인쇄 후 직접 날인하세요.'],
+        gumsu2: [],
+        photo: [],
+        purchasePhoto: [],
+      },
+    };
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const base = defaultSettings();
+        // 새 버전에서 필드가 추가돼도 누락되지 않도록 얕은 병합
+        return Object.assign(base, parsed, {
+          profile: Object.assign(base.profile, parsed.profile),
+          printNotes: Object.assign(base.printNotes, parsed.printNotes),
+        });
+      }
+    } catch (e) {
+      console.warn('개인설정을 불러오지 못해 기본값을 사용합니다.', e);
+    }
+    return defaultSettings();
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+    } catch (e) {
+      console.warn('개인설정 저장 실패', e);
+    }
+  }
+
+  let appSettings = loadSettings();
+
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -959,7 +1143,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
   function renderCommonNotice() {
     document.getElementById('commonNoticeList').innerHTML =
-      COMMON_NOTES.map(t => '<li>' + escHtml(t) + '</li>').join('');
+      appSettings.commonNotices.map(t => '<li>' + escHtml(t) + '</li>').join('');
   }
 
   // 서명·개인정보·외부발급·산단 제출용 문서라 애초에 앱이 대신 만들어줄 수 없는
@@ -976,9 +1160,306 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     return NOT_BUILDABLE_KEYWORDS.some(kw => name.includes(kw));
   }
 
+  // ============================================================
+  // 개인설정 화면: 렌더링 + CRUD
+  // ============================================================
+  function openSettings() {
+    renderSettingsScreen();
+    showScreen('settings');
+  }
+
+  function renderSettingsScreen() {
+    document.getElementById('s_myName').value = appSettings.profile.myName;
+    document.getElementById('s_orgName').value = appSettings.profile.orgName;
+    document.getElementById('s_piName').value = appSettings.profile.piName;
+    document.getElementById('s_contactInfo').value = appSettings.profile.contactInfo;
+
+    renderAiModelOptions();
+    renderProjectsTable();
+    renderBudgetGroups();
+    renderDocsEditor();
+    renderPrintNoteEditor();
+  }
+
+  // ---- 1. 기본 정보 ----
+  function onProfileChange() {
+    appSettings.profile.myName = document.getElementById('s_myName').value;
+    appSettings.profile.orgName = document.getElementById('s_orgName').value;
+    appSettings.profile.piName = document.getElementById('s_piName').value;
+    appSettings.profile.contactInfo = document.getElementById('s_contactInfo').value;
+    saveSettings();
+    // 현재 진행 중인 영수증에도 반영 (별도 편집 UI가 없는 프로필성 필드라 즉시 동기화)
+    receiptData.orgName = appSettings.profile.orgName;
+    receiptData.piName = appSettings.profile.piName;
+    receiptData.contactInfo = appSettings.profile.contactInfo;
+    refreshCurrentPreview();
+  }
+
+  // ---- 2. AI 모델 선택 ----
+  const AI_MODEL_OPTIONS = [
+    { key: 'gemini', label: 'Gemini', ready: true },
+    { key: 'claude', label: 'Claude', ready: false },
+    { key: 'chatgpt', label: 'ChatGPT', ready: false },
+  ];
+  function renderAiModelOptions() {
+    const el = document.getElementById('aiModelOptions');
+    el.innerHTML = '';
+    AI_MODEL_OPTIONS.forEach(function (opt) {
+      const row = document.createElement('label');
+      row.className = 'ai-model-row' + (opt.ready ? '' : ' disabled');
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'aiModel';
+      input.value = opt.key;
+      input.checked = appSettings.aiModel === opt.key;
+      input.disabled = !opt.ready;
+      input.onchange = function () {
+        appSettings.aiModel = opt.key;
+        saveSettings();
+      };
+      row.appendChild(input);
+      row.appendChild(document.createTextNode(' ' + opt.label + ' '));
+      if (!opt.ready) {
+        const em = document.createElement('em');
+        em.textContent = '(준비 중 — 아직 연동되지 않음)';
+        row.appendChild(em);
+      }
+      el.appendChild(row);
+    });
+  }
+
+  // ---- 3. 연구과제명 목록 ----
+  function renderProjectsTable() {
+    const body = document.getElementById('projectsTableBody');
+    body.innerHTML = '';
+    appSettings.projects.forEach(function (p, idx) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><input value="' + esc(p.name) + '" oninput="onProjectInput(' + idx + ',\'name\',this.value)"></td>' +
+        '<td><input value="' + esc(p.number) + '" oninput="onProjectInput(' + idx + ',\'number\',this.value)"></td>' +
+        '<td><button class="row-remove-btn" onclick="removeProject(' + idx + ')">✕</button></td>';
+      body.appendChild(tr);
+    });
+    renderProjectDropdownOptions();
+  }
+  function onProjectInput(idx, field, value) {
+    appSettings.projects[idx][field] = value;
+    saveSettings();
+    renderProjectDropdownOptions();
+  }
+  function addProject() {
+    appSettings.projects.push({ name: '', number: '' });
+    saveSettings();
+    renderProjectsTable();
+  }
+  function removeProject(idx) {
+    appSettings.projects.splice(idx, 1);
+    saveSettings();
+    renderProjectsTable();
+  }
+  function renderProjectDropdownOptions() {
+    const dl = document.getElementById('projectsDatalist');
+    if (!dl) return;
+    dl.innerHTML = appSettings.projects.map(function (p) {
+      return '<option value="' + esc(p.name) + '">';
+    }).join('');
+  }
+  // 연구과제명 입력란: 등록된 과제명과 정확히 일치하면 과제번호를 자동으로 채운다 (수동 수정 가능)
+  function onTaskNameChange() {
+    const name = document.getElementById('f_taskName').value;
+    receiptData.taskName = name;
+    const match = appSettings.projects.find(function (p) { return p.name === name; });
+    if (match) {
+      receiptData.taskNumber = match.number;
+      document.getElementById('f_taskNumber').value = match.number;
+    }
+    refreshCurrentPreview();
+  }
+
+  // ---- 4. 예산 구분 (목 - 세부사업명) ----
+  function renderBudgetGroups() {
+    const container = document.getElementById('budgetGroupsList');
+    container.innerHTML = '';
+    appSettings.budgetGroups.forEach(function (g, gi) {
+      const card = document.createElement('div');
+      card.className = 'budget-group-card';
+
+      const header = document.createElement('div');
+      header.className = 'budget-group-header';
+      const mokInput = document.createElement('input');
+      mokInput.value = g.mok;
+      mokInput.placeholder = '목 이름 (예: 수용비)';
+      mokInput.oninput = function () { g.mok = mokInput.value; saveSettings(); };
+      const delMokBtn = document.createElement('button');
+      delMokBtn.className = 'row-remove-btn';
+      delMokBtn.textContent = '✕ 목 삭제';
+      delMokBtn.onclick = function () {
+        appSettings.budgetGroups.splice(gi, 1);
+        saveSettings();
+        renderBudgetGroups();
+      };
+      header.appendChild(mokInput);
+      header.appendChild(delMokBtn);
+      card.appendChild(header);
+
+      const subsList = document.createElement('div');
+      subsList.className = 'budget-subs-list';
+      g.subs.forEach(function (sub, si) {
+        const row = document.createElement('div');
+        row.className = 'settings-list-row';
+        const subInput = document.createElement('input');
+        subInput.value = sub;
+        subInput.placeholder = '세부사업명';
+        subInput.oninput = function () { g.subs[si] = subInput.value; saveSettings(); };
+        const subDel = document.createElement('button');
+        subDel.className = 'row-remove-btn';
+        subDel.textContent = '✕';
+        subDel.onclick = function () {
+          g.subs.splice(si, 1);
+          saveSettings();
+          renderBudgetGroups();
+        };
+        row.appendChild(subInput);
+        row.appendChild(subDel);
+        subsList.appendChild(row);
+      });
+      const addSubBtn = document.createElement('button');
+      addSubBtn.className = 'link-btn';
+      addSubBtn.textContent = '+ 세부사업명 추가';
+      addSubBtn.onclick = function () {
+        g.subs.push('');
+        saveSettings();
+        renderBudgetGroups();
+      };
+      subsList.appendChild(addSubBtn);
+      card.appendChild(subsList);
+
+      container.appendChild(card);
+    });
+  }
+  function addBudgetGroup() {
+    appSettings.budgetGroups.push({ mok: '', subs: [] });
+    saveSettings();
+    renderBudgetGroups();
+  }
+
+  // ---- 5. 필요서류 마스터 데이터 관리 ----
+  // 문자열 배열(자동안내/주의사항/공통사항 등)을 위한 범용 에디터
+  function renderStringListEditor(containerEl, list, addLabel) {
+    containerEl.innerHTML = '';
+    list.forEach(function (val, idx) {
+      const row = document.createElement('div');
+      row.className = 'settings-list-row';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = val;
+      input.oninput = function () { list[idx] = input.value; saveSettings(); };
+      const del = document.createElement('button');
+      del.className = 'row-remove-btn';
+      del.textContent = '✕';
+      del.onclick = function () {
+        list.splice(idx, 1);
+        saveSettings();
+        renderStringListEditor(containerEl, list, addLabel);
+      };
+      row.appendChild(input);
+      row.appendChild(del);
+      containerEl.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'link-btn';
+    addBtn.textContent = addLabel || '+ 문구 추가';
+    addBtn.onclick = function () {
+      list.push('');
+      saveSettings();
+      renderStringListEditor(containerEl, list, addLabel);
+    };
+    containerEl.appendChild(addBtn);
+  }
+  function renderDocsEditor() {
+    const key = document.getElementById('docsEditCategory').value;
+    const cat = appSettings.categoryDocs[key];
+    renderStringListEditor(document.getElementById('commonNoticesEditor'), appSettings.commonNotices, '+ 공통 확인사항 추가');
+    renderStringListEditor(document.getElementById('blueNotesEditor'), cat.blue, '+ 자동안내 추가');
+    renderStringListEditor(document.getElementById('orangeNotesEditor'), cat.orange, '+ 주의사항 추가');
+    renderDocsListEditor(cat);
+  }
+  function renderDocsListEditor(cat) {
+    const container = document.getElementById('docsListEditor');
+    container.innerHTML = '';
+    cat.docs.forEach(function (doc, idx) {
+      const row = document.createElement('div');
+      row.className = 'settings-doc-row';
+
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = doc.name;
+      nameInput.oninput = function () { doc.name = nameInput.value; saveSettings(); };
+
+      const activeLabel = document.createElement('label');
+      const activeCheckbox = document.createElement('input');
+      activeCheckbox.type = 'checkbox';
+      activeCheckbox.checked = !!doc.active;
+      activeCheckbox.onchange = function () {
+        doc.active = activeCheckbox.checked;
+        saveSettings();
+        if (document.getElementById('screen-step-checklist').classList.contains('active')) updateChecklist();
+      };
+      activeLabel.appendChild(activeCheckbox);
+      activeLabel.appendChild(document.createTextNode(' 활성'));
+
+      const formSelect = document.createElement('select');
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = '(연결 서식 없음)';
+      formSelect.appendChild(noneOpt);
+      Object.keys(FORM_TITLES).forEach(function (fk) {
+        const o = document.createElement('option');
+        o.value = fk;
+        o.textContent = FORM_TITLES[fk];
+        if (doc.formKey === fk) o.selected = true;
+        formSelect.appendChild(o);
+      });
+      formSelect.onchange = function () {
+        doc.formKey = formSelect.value || undefined;
+        saveSettings();
+      };
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'row-remove-btn';
+      delBtn.textContent = '✕';
+      delBtn.onclick = function () {
+        cat.docs.splice(idx, 1);
+        saveSettings();
+        renderDocsListEditor(cat);
+      };
+
+      row.appendChild(nameInput);
+      row.appendChild(activeLabel);
+      row.appendChild(formSelect);
+      row.appendChild(delBtn);
+      container.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'link-btn';
+    addBtn.textContent = '+ 서류 추가';
+    addBtn.onclick = function () {
+      cat.docs.push({ name: '', active: false });
+      saveSettings();
+      renderDocsListEditor(cat);
+    };
+    container.appendChild(addBtn);
+  }
+
+  // ---- 6. 서식별 인쇄 주의사항 관리 ----
+  function renderPrintNoteEditor() {
+    const key = document.getElementById('printNoteFormSelect').value;
+    renderStringListEditor(document.getElementById('printNoteEditor'), appSettings.printNotes[key], '+ 확인사항 추가');
+  }
+
   function updateChecklist() {
     const key = document.getElementById('budgetCategory').value;
-    const cat = CATEGORY_DOCS[key];
+    const cat = appSettings.categoryDocs[key];
 
     renderCommonNotice();
     renderNote(document.getElementById('noteBlue'), cat.blue, '💡 자동 안내');
@@ -1017,6 +1498,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       pane.srcdoc = '<body style="font-family:sans-serif;color:#999;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px;">이 항목에는 아직 지원되는 서식이 없습니다.<br>왼쪽 체크리스트로 준비 여부만 확인하세요.</body>';
       document.getElementById('previewFormTitle').textContent = '';
       document.getElementById('downloadFormBtn').style.display = 'none';
+      currentFormKey = null;
+      document.getElementById('formPrintNotesBox').style.display = 'none';
     }
   }
 
@@ -1311,10 +1794,11 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     vendor: '든든문구 원주점',
     taskName: '2026년 원주시정신건강복지센터 통합정신건강증진사업',
     taskNumber: '2025-71-0135',
-    orgName: '원주의과대학 정신건강의학과',
-    piName: '민성호',
+    // 개인설정(1. 기본 정보)에서 관리하는 값을 기본값으로 사용 — 단일 출처 유지
+    orgName: appSettings.profile.orgName,
+    piName: appSettings.profile.piName,
     fundingOrg: 'SAP',
-    contactInfo: '박유정 / 033-746-0198 내선4',
+    contactInfo: appSettings.profile.contactInfo,
     inspectorName: '박유정',
     witnessName: '염미애',
     inspectionPlace: '원주시정신건강복지센터',
@@ -1391,7 +1875,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   function onConfirmFieldChange() {
     receiptData.date = document.getElementById('f_date').value;
     receiptData.vendor = document.getElementById('f_vendor').value;
-    receiptData.taskName = document.getElementById('f_taskName').value;
     receiptData.taskNumber = document.getElementById('f_taskNumber').value;
     receiptData.inspectionDate = document.getElementById('f_inspectionDate').value;
     refreshCurrentPreview();
@@ -1494,9 +1977,23 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     pane.srcdoc = FORM_HTML[formKey];
     document.getElementById('previewFormTitle').textContent = FORM_TITLES[formKey] || docName;
     document.getElementById('downloadFormBtn').style.display = '';
+    renderFormPrintNotes(formKey);
     pane.onload = function () {
       pane.contentWindow.postMessage({ type: 'setData', payload: buildFormData(formKey) }, '*');
     };
+  }
+  // 개인설정 6번(서식별 인쇄 주의사항)에서 관리하는 문구를 미리보기 위에 표시
+  function renderFormPrintNotes(formKey) {
+    const box = document.getElementById('formPrintNotesBox');
+    const notes = (appSettings.printNotes[formKey] || []).filter(function (n) { return n && n.trim(); });
+    if (notes.length) {
+      box.innerHTML = '<strong>🖨 인쇄 시 확인사항</strong><ul>' +
+        notes.map(function (n) { return '<li>' + escHtml(n) + '</li>'; }).join('') + '</ul>';
+      box.style.display = '';
+    } else {
+      box.innerHTML = '';
+      box.style.display = 'none';
+    }
   }
   function refreshCurrentPreview() {
     if (!currentFormKey) return;
@@ -1580,6 +2077,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
 
   // 초기 렌더링 (기초자료 입력 화면의 우측 폼이 처음부터 샘플 데이터로 채워져 보이도록)
+  renderProjectDropdownOptions();
   populateConfirmForm();
   updateChecklist();
 </script>
