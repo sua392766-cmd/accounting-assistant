@@ -74,6 +74,28 @@
     border: none;
     font-size: 13px;
   }
+  /* 우상단 바로가기: 예전엔 화면에 따라 같은 자리의 버튼 글자·동작이 바뀌는
+     방식이었는데, 클릭 직후 같은 자리가 다른 동작(돌아가기)으로 바뀌면서
+     빠르게 두 번 누르면 열자마자 다시 닫히는 것처럼 버벅거렸다. 대신 바인더
+     인덱스 탭처럼 세 칸을 항상 같은 자리, 같은 동작으로 고정해두고 지금 보고
+     있는 화면만 밑줄로 표시한다 — 눌러도 목적지가 안 바뀌니 실수로 두 번
+     눌러도 문제없다. */
+  .header-tabs { display: flex; align-items: center; gap: 4px; }
+  .header-tab {
+    color: #888;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 2px;
+  }
+  .header-tab:hover { color: #333; }
+  .header-tab.active {
+    color: #222;
+    font-weight: bold;
+    border-bottom-color: #333;
+  }
   /* 도움말 팝업 */
   .help-modal-overlay {
     display: none;
@@ -895,8 +917,11 @@
     <div class="header-right">
       <span class="step-label" id="stepLabel"></span>
       <span class="header-divider" id="headerDivider"></span>
-      <button class="header-link" id="settingsLinkBtn" onclick="openSettings()">⚙ 개인설정</button>
-      <button class="header-link" id="ledgerLinkBtn" onclick="openLedger()">📋 회계처리 목록</button>
+      <div class="header-tabs" id="headerTabs">
+        <button type="button" class="header-tab" data-section="main" onclick="showMainFlow()">🧾 영수증 작성</button>
+        <button type="button" class="header-tab" data-section="settings" onclick="openSettings()">⚙ 개인설정</button>
+        <button type="button" class="header-tab" data-section="ledger" onclick="openLedger()">📋 처리 완료 목록</button>
+      </div>
     </div>
   </header>
 
@@ -1077,10 +1102,10 @@
     </div>
   </div>
 
-  <!-- 회계처리 목록 -->
+  <!-- 처리 완료 목록 -->
   <div class="screen" id="screen-ledger">
     <div class="checklist-header">
-      <h1>회계처리 목록</h1>
+      <h1>처리 완료 목록</h1>
       <p class="desc" title="전체 서식 인쇄를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.">전체 서식 인쇄를 완료할 때마다 한 건씩 자동으로 추가됩니다</p>
     </div>
     <div class="ledger-filter-bar">
@@ -1203,7 +1228,7 @@
     </div>
 
     <div class="btn-row">
-      <button class="secondary" onclick="closeUtilityScreen()">← 돌아가기</button>
+      <button class="secondary" onclick="showMainFlow()">← 돌아가기</button>
     </div>
 
   </div>
@@ -1287,17 +1312,12 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       label.textContent = '';
     }
 
-    // 우상단 두 바로가기는 "지금 보고 있는 화면" 쪽 자리가 대신 돌아가기 역할을
-    // 한다(따로 돌아가기 버튼을 만들지 않는다) — 예: 개인설정 화면에서는 "⚙
-    // 개인설정" 자리가 "← 기초자료 입력"(열기 전 단계)으로 바뀐다. 나머지 한
-    // 칸은 그대로 다른 화면으로 가는 바로가기로 남는다.
-    const settingsBtn = document.getElementById('settingsLinkBtn');
-    const ledgerBtn = document.getElementById('ledgerLinkBtn');
-    const backLabel = '← ' + STEP_NAMES[currentStepIndex];
-    settingsBtn.textContent = (id === 'settings') ? backLabel : '⚙ 개인설정';
-    settingsBtn.onclick = (id === 'settings') ? closeUtilityScreen : openSettings;
-    ledgerBtn.textContent = (id === 'ledger') ? backLabel : '📋 회계처리 목록';
-    ledgerBtn.onclick = (id === 'ledger') ? closeUtilityScreen : openLedger;
+    // 우상단 바인더 탭 3칸(영수증 작성/개인설정/회계처리 목록)은 항상 같은 자리·
+    // 같은 동작이고, 지금 보고 있는 화면에 해당하는 탭에만 밑줄 표시만 한다.
+    const section = (stepIdx >= 0) ? 'main' : id; // id는 'settings' | 'ledger'
+    document.querySelectorAll('.header-tab').forEach(function (tab) {
+      tab.classList.toggle('active', tab.dataset.section === section);
+    });
   }
 
   function renderDots(activeIdx) {
@@ -2341,9 +2361,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     }
   }
 
-  // 개인설정·회계처리 목록은 어느 단계에서 열었든, 열기 전 단계로 그대로 돌아간다
-  // (헤더의 홈으로 버튼을 없앤 뒤로는 이게 유일한 탈출구라 반드시 있어야 한다).
-  function closeUtilityScreen() {
+  // 개인설정·회계처리 목록은 어느 단계에서 열었든, 열기 전 단계로 그대로 돌아간다.
+  // 우상단 "🧾 영수증 작성" 탭과 개인설정 화면 맨 아래 돌아가기 버튼이 공통으로 쓴다.
+  function showMainFlow() {
     showScreen(STEPS[currentStepIndex]);
   }
 
