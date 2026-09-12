@@ -49,10 +49,23 @@
   @media (max-width: 720px) {
     header { padding: 14px 18px; }
   }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; flex-shrink: 1; }
+  .brand .mark {
+    width: 26px; height: 26px; border-radius: 7px; background: #2f6fed; flex: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand .mark svg { width: 15px; height: 15px; }
+  .brand .word {
+    font-weight: 700; font-size: 15px; letter-spacing: -0.01em; color: #222;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
   header .step-label {
     color: #888;
+    font-size: 13px;
+    white-space: nowrap;
   }
   .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-right .header-divider { width: 1px; height: 16px; background: #ccc; display: inline-block; }
   header .header-link {
     color: #555;
     text-decoration: underline;
@@ -194,6 +207,18 @@
     background: #fff;
     color: #333;
   }
+  /* 전체서식 인쇄: 이 업무 전체를 끝내는 마지막 동작이라 강조하되, 위치·가로 크기는
+     기존 그대로 두고(뷰어 높이 계산에 영향 없도록) 색만 기존 강조색(파랑)으로 바꿨다. */
+  button.btn-final-print {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+    font-weight: 700;
+  }
+  button.btn-final-print:hover {
+    background: #1e4d8f;
+    border-color: #1e4d8f;
+  }
   button:disabled {
     opacity: 0.35;
     cursor: default;
@@ -282,6 +307,26 @@
     flex-direction: column;
     gap: 20px;
   }
+  /* 영수증 추가 / 엑셀 업로드 / 새 작업은 "데이터를 채우는 세 가지 방법"으로 같은
+     성격이라, 하나의 카드로 묶어서 서로 다른 선택지처럼 뿔뿔이 떠 있지 않게 했다.
+     "다음"만 이 카드 밖에서 독립된 진한 버튼으로 남긴다. */
+  .input-methods-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px;
+    background: #fafafa;
+  }
+  /* "직접 입력 / 새 작업"은 실제로는 데이터를 지우는 동작이라 다른 두 방법과
+     크기·모양은 맞추되(같은 카드 안 나란한 선택지처럼 보이게) 글자색만 빨갛게 남겨
+     주의를 준다 — 예전처럼 통째로 빨간 박스면 다른 둘과 너무 튀어 어색해 보였다. */
+  .reset-btn {
+    color: #c33;
+    border-color: #e0a0a0;
+  }
+  .reset-btn:hover { background: #fff5f5; }
   .input-left-group .row {
     display: flex;
     align-items: center;
@@ -358,6 +403,9 @@
     gap: 14px;
     margin-bottom: 10px;
   }
+  /* 기초자료 입력 화면은 서식 체크리스트만큼 세로 공간이 빠듯하지 않아서, 제목 줄과
+     바로 아래 내용(업로드·입력 영역) 사이를 조금 더 띄워 답답해 보이지 않게 했다. */
+  .screen-input-wide .checklist-header { margin-bottom: 26px; }
   .checklist-header h1 { margin: 0; white-space: nowrap; font-size: 20px; }
   .checklist-header .desc {
     margin: 0;
@@ -631,21 +679,45 @@
     border-collapse: collapse;
     font-size: 13px;
     margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
   }
+  /* 품목명·규격은 왼쪽 정렬(글자는 왼쪽이 더 잘 읽힌다), 단위는 가운데,
+     단가·수량은 숫자라 오른쪽 정렬 + 자릿수 맞춤으로 나눠 표가 덜 흔들리게 했다. */
   table.items-editor th, table.items-editor td {
-    border: 1px solid #ddd;
-    padding: 6px 8px;
-    text-align: center;
+    border: none;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 7px 9px;
+    text-align: left;
   }
   table.items-editor th {
-    background: #f7f7f7;
-    font-size: 12px;
+    background: #f7f8fa;
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
   }
+  table.items-editor col.col-name { width: 30%; }
+  table.items-editor col.col-spec { width: 22%; }
+  table.items-editor col.col-unit { width: 14%; }
+  table.items-editor col.col-price { width: 16%; }
+  table.items-editor col.col-qty { width: 10%; }
+  table.items-editor col.col-del { width: 8%; }
+  table.items-editor th.col-unit, table.items-editor td.col-unit,
+  table.items-editor th.col-del, table.items-editor td.col-del { text-align: center; }
+  table.items-editor th.col-price, table.items-editor td.col-price,
+  table.items-editor th.col-qty, table.items-editor td.col-qty { text-align: right; }
+  table.items-editor tbody tr:nth-child(even) td { background: #fafbfc; }
   table.items-editor input {
     width: 100%;
     border: none;
-    text-align: center;
-    font-size: 13px;
+    background: none;
+    text-align: inherit;
+    font: inherit;
+    font-variant-numeric: inherit;
     padding: 4px;
   }
   table.items-editor input:focus {
@@ -834,8 +906,13 @@
 
 <div class="frame">
   <header>
-    <span class="step-label" id="stepLabel"></span>
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3h11l3 3v15l-3-1.6-2.4 1.6-2.4-1.6L9 21l-2.4-1.6L4 21V6l1-3z" fill="#fff" opacity="0.95"/><path d="M8 9h8M8 12.5h8M8 16h5" stroke="#2f6fed" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      <span class="word">회계 증빙 자동서식</span>
+    </div>
     <div class="header-right">
+      <span class="step-label" id="stepLabel"></span>
+      <span class="header-divider" id="headerDivider"></span>
       <button class="header-link" onclick="openSettings()">⚙ 설정</button>
       <button class="header-link" onclick="openLedger()">📋 회계처리 목록</button>
     </div>
@@ -850,23 +927,25 @@
 
     <div class="input-split">
       <div class="input-left">
-        <div class="input-left-group">
-          <button onclick="document.getElementById('receiptUploadInput').click()">📎 영수증 추가</button>
-          <input type="file" id="receiptUploadInput" accept="image/*" style="display:none" onchange="onReceiptFileSelected(this.files[0])">
-          <div class="placeholder-box dropzone" id="receiptDropzone">
-            영수증 이미지를 여기로 끌어다 놓아도 됩니다.<br>
-            <span style="font-size:11px;color:#aaa;">(JPG, PNG 등)</span>
+        <div class="input-methods-card">
+          <div class="input-left-group">
+            <button onclick="document.getElementById('receiptUploadInput').click()">📎 영수증 추가</button>
+            <input type="file" id="receiptUploadInput" accept="image/*" style="display:none" onchange="onReceiptFileSelected(this.files[0])">
+            <div class="placeholder-box dropzone" id="receiptDropzone">
+              영수증 이미지를 여기로 끌어다 놓아도 됩니다.<br>
+              <span style="font-size:11px;color:#aaa;">(JPG, PNG 등)</span>
+            </div>
           </div>
-        </div>
-        <div class="input-left-group">
-          <button class="danger-box" style="width:100%; box-sizing:border-box;" onclick="confirmResetInput()">↺ 직접 입력 / 새 작업</button>
-        </div>
-        <div class="input-left-group">
-          <div class="row">
-            <button onclick="document.getElementById('excelUploadInput').click()">📊 엑셀 업로드</button>
-            <button class="link-btn entry-option-link" onclick="downloadExcelTemplate()">⬇ 양식</button>
+          <div class="input-left-group">
+            <div class="row">
+              <button onclick="document.getElementById('excelUploadInput').click()">📊 엑셀 업로드</button>
+              <button class="link-btn entry-option-link" onclick="downloadExcelTemplate()">⬇ 양식</button>
+            </div>
+            <input type="file" id="excelUploadInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="onExcelFileSelected(this.files[0])">
           </div>
-          <input type="file" id="excelUploadInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="onExcelFileSelected(this.files[0])">
+          <div class="input-left-group">
+            <button class="reset-btn" style="width:100%; box-sizing:border-box;" onclick="confirmResetInput()">↺ 직접 입력 / 새 작업</button>
+          </div>
         </div>
         <div class="input-left-group">
           <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
@@ -912,8 +991,15 @@
               </div>
             </div>
             <table class="items-editor" id="itemsEditor">
+              <colgroup>
+                <col class="col-name"><col class="col-spec"><col class="col-unit">
+                <col class="col-price"><col class="col-qty"><col class="col-del">
+              </colgroup>
               <thead>
-                <tr><th>품목명</th><th>규격</th><th>단위</th><th>단가</th><th>수량</th><th></th></tr>
+                <tr>
+                  <th class="col-name">품목명</th><th class="col-spec">규격</th><th class="col-unit">단위</th>
+                  <th class="col-price">단가</th><th class="col-qty">수량</th><th class="col-del"></th>
+                </tr>
               </thead>
               <tbody id="itemsEditorBody"></tbody>
             </table>
@@ -970,7 +1056,7 @@
           </select>
         </div>
         <div class="preview-list" id="docList"></div>
-        <button class="secondary" style="width:100%; box-sizing:border-box;" onclick="downloadAllForms()">🖨 전체 서식 인쇄</button>
+        <button class="btn-final-print" style="width:100%; box-sizing:border-box;" onclick="downloadAllForms()">🖨 전체 서식 인쇄</button>
         <p class="desc" id="pdfSummaryBox" style="display:none; font-size:11.5px;"></p>
       </div>
 
@@ -2532,12 +2618,12 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     receiptData.items.forEach((item, idx) => {
       const tr = document.createElement('tr');
       tr.innerHTML =
-        '<td><input value="' + esc(item.name) + '" oninput="onItemInput(' + idx + ',\'name\',this.value)"></td>' +
-        '<td><input value="' + esc(item.spec) + '" oninput="onItemInput(' + idx + ',\'spec\',this.value)"></td>' +
-        '<td><input value="' + esc(item.unit) + '" oninput="onItemInput(' + idx + ',\'unit\',this.value)"></td>' +
-        '<td><input value="' + esc(item.price) + '" oninput="onItemInput(' + idx + ',\'price\',this.value)"></td>' +
-        '<td><input value="' + esc(item.qty) + '" oninput="onItemInput(' + idx + ',\'qty\',this.value)"></td>' +
-        '<td><button class="row-remove-btn" onclick="removeItemRow(' + idx + ')">✕</button></td>';
+        '<td class="col-name"><input value="' + esc(item.name) + '" oninput="onItemInput(' + idx + ',\'name\',this.value)"></td>' +
+        '<td class="col-spec"><input value="' + esc(item.spec) + '" oninput="onItemInput(' + idx + ',\'spec\',this.value)"></td>' +
+        '<td class="col-unit"><input value="' + esc(item.unit) + '" oninput="onItemInput(' + idx + ',\'unit\',this.value)"></td>' +
+        '<td class="col-price"><input value="' + esc(item.price) + '" oninput="onItemInput(' + idx + ',\'price\',this.value)"></td>' +
+        '<td class="col-qty"><input value="' + esc(item.qty) + '" oninput="onItemInput(' + idx + ',\'qty\',this.value)"></td>' +
+        '<td class="col-del"><button class="row-remove-btn" onclick="removeItemRow(' + idx + ')">✕</button></td>';
       body.appendChild(tr);
     });
     updateTotalDisplay();
