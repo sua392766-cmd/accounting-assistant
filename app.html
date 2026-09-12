@@ -692,6 +692,23 @@
   .settings-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
   .settings-table th, .settings-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
   .settings-table th { background: #f7f7f7; font-size: 12px; }
+  .ledger-filter-bar {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .ledger-filter-bar .field { flex: 0 0 auto; }
+  .ledger-filter-bar .field label {
+    display: block; font-size: 12.5px; font-weight: bold; color: #555; margin-bottom: 5px;
+  }
+  .ledger-filter-bar select {
+    font-size: 13px; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px; min-width: 220px;
+  }
+  .ledger-filter-bar .ledger-search-field { flex: 1 1 200px; }
+  .ledger-filter-bar .ledger-search-field input {
+    width: 100%; font-size: 13px; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
+  }
   .ledger-table-wrap { overflow-x: auto; margin-bottom: 10px; }
   .ledger-table-wrap .settings-table { min-width: 640px; }
   .settings-table input { width: 100%; border: none; font-size: 13px; padding: 4px; }
@@ -970,10 +987,20 @@
   <div class="screen" id="screen-ledger">
     <h1>회계처리 목록</h1>
     <p class="desc">전체 서식 PDF 다운로드를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.</p>
+    <div class="ledger-filter-bar">
+      <div class="field">
+        <label>연구과제명</label>
+        <select id="ledgerTaskFilter" onchange="renderLedgerTable()"></select>
+      </div>
+      <div class="field ledger-search-field">
+        <label>검색</label>
+        <input type="text" id="ledgerSearchInput" placeholder="목·세목·지출내역·날짜로 검색" oninput="renderLedgerTable()">
+      </div>
+    </div>
     <div class="ledger-table-wrap">
       <table class="settings-table">
         <thead>
-          <tr><th>연구과제명</th><th>목</th><th>세목</th><th>항목</th><th>날짜</th><th>업체명</th><th>금액</th></tr>
+          <tr><th>날짜</th><th>목</th><th>세목</th><th>지출내역</th><th>금액</th></tr>
         </thead>
         <tbody id="ledgerTableBody"></tbody>
       </table>
@@ -2631,33 +2658,61 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
 
   function openLedger() {
+    renderLedgerTaskFilterOptions();
     renderLedgerTable();
     showScreen('ledger');
   }
 
+  // 상단 "연구과제명" 드롭박스: 목록에 실제로 등장하는 연구과제만 옵션으로 보여준다
+  function renderLedgerTaskFilterOptions() {
+    const sel = document.getElementById('ledgerTaskFilter');
+    const prevValue = sel.value;
+    const uniqueTasks = [];
+    ledgerEntries.forEach(function (e) {
+      if (e.taskName && uniqueTasks.indexOf(e.taskName) === -1) uniqueTasks.push(e.taskName);
+    });
+    sel.innerHTML = '<option value="">전체 연구과제</option>' + uniqueTasks.map(function (t) {
+      return '<option value="' + esc(t) + '">' + esc(t) + '</option>';
+    }).join('');
+    if (uniqueTasks.indexOf(prevValue) !== -1) sel.value = prevValue;
+  }
+
+  function getFilteredLedgerEntries() {
+    const taskFilter = document.getElementById('ledgerTaskFilter').value;
+    const q = (document.getElementById('ledgerSearchInput').value || '').trim().toLowerCase();
+    return ledgerEntries.filter(function (e) {
+      if (taskFilter && e.taskName !== taskFilter) return false;
+      if (!q) return true;
+      const haystack = [e.date, e.mok, e.sebu, e.category].join(' ').toLowerCase();
+      return haystack.indexOf(q) !== -1;
+    });
+  }
+
   function renderLedgerTable() {
     const body = document.getElementById('ledgerTableBody');
-    if (!ledgerEntries.length) {
-      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">아직 완료 처리된 건이 없습니다. PDF 다운로드를 완료하면 여기에 자동으로 추가됩니다.</td></tr>';
+    const filtered = getFilteredLedgerEntries();
+    if (!filtered.length) {
+      body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;padding:24px;">' +
+        (ledgerEntries.length ? '조건에 맞는 항목이 없습니다.' : '아직 완료 처리된 건이 없습니다. PDF 다운로드를 완료하면 여기에 자동으로 추가됩니다.') +
+        '</td></tr>';
       return;
     }
-    body.innerHTML = ledgerEntries.map(function (e) {
+    body.innerHTML = filtered.map(function (e) {
       return '<tr>' +
-        '<td>' + escHtml(e.taskName) + '</td>' +
+        '<td>' + escHtml(e.date) + '</td>' +
         '<td>' + escHtml(e.mok) + '</td>' +
         '<td>' + escHtml(e.sebu) + '</td>' +
         '<td>' + escHtml(e.category) + '</td>' +
-        '<td>' + escHtml(e.date) + '</td>' +
-        '<td>' + escHtml(e.vendor) + '</td>' +
         '<td style="text-align:right;">' + (Number(e.amount) || 0).toLocaleString() + '원</td>' +
         '</tr>';
     }).join('');
   }
 
+  // 지금 화면에 (필터·검색 적용된 상태로) 보이는 목록 그대로 엑셀로 내려받는다
   function downloadLedgerExcel() {
-    const headers = ['연구과제명', '목', '세목', '항목', '날짜', '업체명', '금액'];
-    const rows = ledgerEntries.map(function (e) {
-      return [e.taskName, e.mok, e.sebu, e.category, e.date, e.vendor, e.amount];
+    const headers = ['날짜', '목', '세목', '지출내역', '금액'];
+    const rows = getFilteredLedgerEntries().map(function (e) {
+      return [e.date, e.mok, e.sebu, e.category, e.amount];
     });
     const csv = [headers].concat(rows).map(function (row) { return row.map(csvEscape).join(','); }).join('\r\n');
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
