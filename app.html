@@ -49,14 +49,6 @@
   @media (max-width: 720px) {
     header { padding: 14px 18px; }
   }
-  header .home-link {
-    color: #555;
-    text-decoration: underline;
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-size: 13px;
-  }
   header .step-label {
     color: #888;
   }
@@ -205,26 +197,6 @@
   button:disabled {
     opacity: 0.35;
     cursor: default;
-  }
-  .home-menu {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-top: 16px;
-  }
-  @media (max-width: 720px) {
-    .home-menu { grid-template-columns: 1fr; }
-  }
-  .home-menu button {
-    text-align: left;
-    padding: 22px 18px;
-    font-size: 15px;
-  }
-  .home-menu button.main {
-    background: #333;
-    color: #fff;
-    border-color: #333;
-    font-weight: bold;
   }
   .dots {
     display: flex;
@@ -840,24 +812,12 @@
 
 <div class="frame">
   <header>
-    <button class="home-link" onclick="goHome()">🏠 홈으로</button>
+    <span class="step-label" id="stepLabel"></span>
     <div class="header-right">
-      <span class="step-label" id="stepLabel"></span>
       <button class="header-link" onclick="openSettings()">⚙ 설정</button>
       <button class="header-link" onclick="openLedger()">📋 회계처리 목록</button>
     </div>
   </header>
-
-  <!-- 홈 화면 -->
-  <div class="screen active" id="screen-home">
-    <h1>영수증 자동서식 작성</h1>
-    <p class="desc">원주시정신건강복지센터 회계증빙 서식 자동 작성 도구</p>
-    <div class="home-menu">
-      <button class="main" onclick="startFlow()">새 영수증 처리 시작</button>
-      <button onclick="openLedger()">회계처리 목록</button>
-      <button onclick="openSettings()">개인설정</button>
-    </div>
-  </div>
 
   <!-- 1. 기초자료 입력 (업로드 + 확인을 한 화면에서 좌우로) -->
   <div class="screen screen-input-wide" id="screen-step-input">
@@ -1020,7 +980,9 @@
       <button class="primary" onclick="downloadAllForms()">⬇ 전체 서식 PDF 다운로드</button>
     </div>
     <div class="btn-row">
-      <button class="secondary" onclick="goHome()">완료 (홈으로)</button>
+      <!-- 기능은 아직 비워둠 — 인쇄/다운로드 완료 후 마무리 동작(예: 회계처리 목록 자동 이동 등)을
+           나중에 연결할 자리로 디자인만 남겨둔다. -->
+      <button class="secondary" disabled>완료</button>
     </div>
   </div>
 
@@ -1047,7 +1009,6 @@
       </table>
     </div>
     <div class="btn-row">
-      <button class="secondary" onclick="goHome()">홈으로</button>
       <button class="primary" onclick="downloadLedgerExcel()">⬇ 엑셀 다운로드</button>
     </div>
   </div>
@@ -1146,9 +1107,6 @@
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="secondary" onclick="goHome()">홈으로</button>
-    </div>
   </div>
 
 </div>
@@ -2228,11 +2186,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     }
   }
 
-  function goHome() {
-    currentStepIndex = 0;
-    showScreen('home');
-  }
-
+  // 홈 화면은 없앴다 — 앱은 항상 기초자료 입력 화면에서 시작하고, 그 다음부터는
+  // 이전/다음으로만 오간다(회계처리 목록·개인설정은 헤더 바로가기로 별도 진입).
   function startFlow() {
     currentStepIndex = 0;
     showScreen(STEPS[0]);
@@ -2249,8 +2204,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     if (currentStepIndex > 0) {
       currentStepIndex--;
       showScreen(STEPS[currentStepIndex]);
-    } else {
-      goHome();
     }
   }
 
@@ -2929,6 +2882,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   renderProjectDropdownOptions();
   populateConfirmForm();
   updateChecklist();
+  // 홈 화면이 없으므로 앱은 항상 기초자료 입력 화면에서 시작한다.
+  startFlow();
 </script>
 
 </body>
