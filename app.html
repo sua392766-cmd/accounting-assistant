@@ -421,7 +421,6 @@
     font-size: 12px;
     font-weight: bold;
     color: #333;
-    cursor: pointer;
   }
   .notice-block[open] summary {
     margin-bottom: 6px;
@@ -433,7 +432,6 @@
   }
   /* 주의사항(주황)은 기본 접혀있다가 클릭하면 펼쳐짐 */
   .note-orange summary {
-    cursor: pointer;
     font-weight: bold;
   }
   .note-orange[open] summary {
@@ -444,6 +442,35 @@
     padding-left: 15px;
   }
   .note-orange li + li { margin-top: 4px; }
+  /* 공통 필수 확인사항 / 자동 안내 / 주의사항: 세 항목 모두 같은 접기·펼치기 형식으로 통일.
+     접혀 있을 때는 역삼각형(▽), 펼쳐지면 정삼각형(△)으로 방향이 뒤집혀 보이도록 표시 */
+  .notice-block summary,
+  .note-orange summary,
+  .note-blue summary {
+    cursor: pointer;
+    font-weight: bold;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .notice-block summary::-webkit-details-marker,
+  .note-orange summary::-webkit-details-marker,
+  .note-blue summary::-webkit-details-marker {
+    display: none;
+  }
+  .notice-block summary::before,
+  .note-orange summary::before,
+  .note-blue summary::before {
+    content: '▼';
+    font-size: 9px;
+    flex-shrink: 0;
+  }
+  .notice-block[open] summary::before,
+  .note-orange[open] summary::before,
+  .note-blue[open] summary::before {
+    content: '▲';
+  }
   .preview-list {
     display: flex;
     flex-direction: column;
@@ -526,15 +553,16 @@
     min-width: 220px;
     margin-bottom: 10px;
   }
+  /* .note-blue/.note-orange(둘 다 <details>)는 보임·숨김을 JS가 style.display로 직접
+     제어한다 — 예전에 .note{display:none}/.note.show{display:block}로 제어하던 방식이
+     남아있으면 이 규칙이 항상 이겨서 내용이 있어도 계속 숨겨지므로 여기서는 두지 않는다. */
   .note {
     font-size: 12.5px;
     padding: 8px 12px;
     border-radius: 6px;
     margin-top: 6px;
     line-height: 1.5;
-    display: none;
   }
-  .note.show { display: block; }
   .note strong {
     display: block;
     margin-bottom: 4px;
@@ -975,7 +1003,10 @@
           <summary>📌 공통 필수 확인사항</summary>
           <ul id="commonNoticeList"></ul>
         </details>
-        <div class="note note-blue" id="noteBlue"></div>
+        <details class="note note-blue" id="noteBlueDetails" style="display:none;">
+          <summary>💡 자동 안내</summary>
+          <ul id="noteBlueList"></ul>
+        </details>
         <details class="note note-orange" id="noteOrangeDetails" style="display:none;">
           <summary>⚠ 주의사항</summary>
           <ul id="noteOrangeList"></ul>
@@ -1475,13 +1506,16 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  function renderNote(el, items, label) {
+  // 자동 안내(파랑)도 주의사항(주황)과 같은 <details> 형식으로 표시 (접기/펼치기 가능)
+  function renderBlueNote(items) {
+    const wrap = document.getElementById('noteBlueDetails');
+    const list = document.getElementById('noteBlueList');
     if (items && items.length) {
-      el.innerHTML = '<strong>' + label + '</strong><ul>' + items.map(t => '<li>' + escHtml(t) + '</li>').join('') + '</ul>';
-      el.classList.add('show');
+      list.innerHTML = items.map(t => '<li>' + escHtml(t) + '</li>').join('');
+      wrap.style.display = '';
     } else {
-      el.innerHTML = '';
-      el.classList.remove('show');
+      list.innerHTML = '';
+      wrap.style.display = 'none';
     }
   }
   // 주의사항(주황)은 항목이 늘어나 화면을 많이 차지하므로 기본 접힌 <details>로 표시
@@ -2091,7 +2125,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     const cat = appSettings.categoryDocs[key];
 
     renderCommonNotice();
-    renderNote(document.getElementById('noteBlue'), cat.blue, '💡 자동 안내');
+    renderBlueNote(cat.blue);
     renderOrangeNote(cat.orange);
 
     const listEl = document.getElementById('docList');
