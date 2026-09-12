@@ -639,6 +639,16 @@
   }
   .settings-doc-row label { font-size: 12.5px; color: #555; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
   .settings-doc-row select { font-size: 12.5px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; }
+  /* 공통 확인사항/자동안내/주의사항 문구: 화면에서 직접 수정하지 않고 업로드로만 교체 (읽기 전용 표시) */
+  .settings-readonly-list {
+    list-style: disc;
+    margin: 0 0 8px 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #333;
+  }
+  .settings-readonly-list li { margin-bottom: 4px; }
+  .settings-readonly-empty { list-style: none; margin-left: -20px; color: #999; }
   .ai-model-row {
     display: flex; align-items: center; gap: 8px; padding: 9px 10px;
     border: 1px solid #ccc; border-radius: 6px; margin-bottom: 6px; font-size: 13.5px; cursor: pointer;
@@ -911,8 +921,6 @@
       <div class="btn-row" style="margin-top:0;">
         <button class="link-btn" onclick="addProject()">+ 과제 추가</button>
         <button class="link-btn" onclick="downloadProjectsCsv()">⬇ CSV 다운로드</button>
-        <button class="link-btn" onclick="document.getElementById('projectsImportInput').click()">⬆ CSV 업로드</button>
-        <input type="file" id="projectsImportInput" accept=".csv" style="display:none" onchange="importProjectsCsv(this.files[0])">
       </div>
     </div>
 
@@ -947,6 +955,7 @@
             <option value="utility">공공요금·우편발송</option>
           </select>
         </div>
+        <p style="font-size:11.5px;color:#888;margin:6px 0 0;">💡 아래 세 항목은 화면에서 직접 고치지 않고, txt 파일 업로드로만 통째로 교체합니다. (⬇ 다운로드로 현재 내용을 받아 메모장/엑셀에서 한 줄에 문구 1개씩 수정한 뒤 ⬆ 업로드)</p>
         <div class="settings-subsection">
           <h4>📌 공통 필수 확인사항 (모든 항목 공통)</h4>
           <div id="commonNoticesEditor"></div>
@@ -1493,27 +1502,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       return [p.name, p.number];
     }));
   }
-  function importProjectsCsv(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const rows = parseCsv(e.target.result);
-      const input = document.getElementById('projectsImportInput');
-      if (!rows.length) { alert('CSV 내용을 읽지 못했습니다.'); input.value = ''; return; }
-      const dataRows = (rows[0][0] === '연구과제' || rows[0][0] === '연구과제명') ? rows.slice(1) : rows;
-      if (!confirm('지금 연구과제 목록을 이 CSV(' + dataRows.length + '행)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
-        input.value = '';
-        return;
-      }
-      appSettings.projects = dataRows.map(function (r) { return { name: r[0] || '', number: r[1] || '' }; });
-      saveSettings();
-      renderProjectsTable();
-      input.value = '';
-      alert('연구과제 목록을 불러왔습니다.');
-    };
-    reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
-    reader.readAsText(file);
-  }
   function downloadBudgetGroupsCsv() {
     downloadCsv('예산구분_목록.csv', ['구분1', '구분2'], appSettings.budgetGroups.map(function (g) {
       return [g.mok, g.sub];
@@ -1543,44 +1531,104 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
 
   // ---- 5. 필요서류 마스터 데이터 관리 ----
   // 문자열 배열(자동안내/주의사항/공통사항 등)을 위한 범용 에디터
-  function renderStringListEditor(containerEl, list, addLabel) {
-    containerEl.innerHTML = '';
-    list.forEach(function (val, idx) {
-      const row = document.createElement('div');
-      row.className = 'settings-list-row';
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.value = val;
-      input.oninput = function () { list[idx] = input.value; saveSettings(); };
-      const del = document.createElement('button');
-      del.className = 'row-remove-btn';
-      del.textContent = '✕';
-      del.onclick = function () {
-        list.splice(idx, 1);
-        saveSettings();
-        renderStringListEditor(containerEl, list, addLabel);
-      };
-      row.appendChild(input);
-      row.appendChild(del);
-      containerEl.appendChild(row);
-    });
-    const addBtn = document.createElement('button');
-    addBtn.className = 'link-btn';
-    addBtn.textContent = addLabel || '+ 문구 추가';
-    addBtn.onclick = function () {
-      list.push('');
-      saveSettings();
-      renderStringListEditor(containerEl, list, addLabel);
-    };
-    containerEl.appendChild(addBtn);
-  }
   function renderDocsEditor() {
     const key = document.getElementById('docsEditCategory').value;
     const cat = appSettings.categoryDocs[key];
-    renderStringListEditor(document.getElementById('commonNoticesEditor'), appSettings.commonNotices, '+ 공통 확인사항 추가');
-    renderStringListEditor(document.getElementById('blueNotesEditor'), cat.blue, '+ 자동안내 추가');
-    renderStringListEditor(document.getElementById('orangeNotesEditor'), cat.orange, '+ 주의사항 추가');
+    renderStringListUploader(
+      document.getElementById('commonNoticesEditor'),
+      function () { return appSettings.commonNotices; },
+      function (lines) { appSettings.commonNotices = lines; },
+      '공통 필수 확인사항', '공통_필수_확인사항'
+    );
+    renderStringListUploader(
+      document.getElementById('blueNotesEditor'),
+      function () { return cat.blue; },
+      function (lines) { cat.blue = lines; },
+      '자동 안내 문구', '자동안내문구_' + key
+    );
+    renderStringListUploader(
+      document.getElementById('orangeNotesEditor'),
+      function () { return cat.orange; },
+      function (lines) { cat.orange = lines; },
+      '주의사항 문구', '주의사항문구_' + key
+    );
     renderDocsListEditor(cat);
+  }
+  // 문구 목록(txt, 한 줄에 한 문구) 다운로드
+  function downloadNoticesTxt(filenameBase, list) {
+    const text = list.join('\r\n');
+    const blob = new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filenameBase + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  // 공통 필수 확인사항 / 자동 안내 문구 / 주의사항 문구: 화면에서 바로 고치지 않고
+  // txt 파일 업로드(한 줄 = 문구 1개)로만 통째로 교체하도록 한다. (실무자가 엑셀/메모장으로 준비해서 올림)
+  function renderStringListUploader(containerEl, getList, setList, label, filenameBase) {
+    containerEl.innerHTML = '';
+    const list = getList();
+    const ul = document.createElement('ul');
+    ul.className = 'settings-readonly-list';
+    if (!list.length) {
+      const li = document.createElement('li');
+      li.className = 'settings-readonly-empty';
+      li.textContent = '(등록된 문구 없음)';
+      ul.appendChild(li);
+    } else {
+      list.forEach(function (val) {
+        const li = document.createElement('li');
+        li.textContent = val;
+        ul.appendChild(li);
+      });
+    }
+    containerEl.appendChild(ul);
+
+    const btnRow = document.createElement('div');
+    btnRow.className = 'btn-row';
+    btnRow.style.marginTop = '0';
+
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'link-btn';
+    dlBtn.textContent = '⬇ 다운로드';
+    dlBtn.onclick = function () { downloadNoticesTxt(filenameBase, getList()); };
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.txt';
+    fileInput.style.display = 'none';
+    fileInput.onchange = function () {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const lines = e.target.result.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+        if (!confirm(label + ' 목록을 이 파일(' + lines.length + '줄)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
+          fileInput.value = '';
+          return;
+        }
+        setList(lines);
+        saveSettings();
+        renderDocsEditor();
+        alert(label + ' 목록을 불러왔습니다.');
+      };
+      reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
+      reader.readAsText(file);
+    };
+
+    const upBtn = document.createElement('button');
+    upBtn.className = 'link-btn';
+    upBtn.textContent = '⬆ 업로드로 수정';
+    upBtn.onclick = function () { fileInput.click(); };
+
+    btnRow.appendChild(dlBtn);
+    btnRow.appendChild(upBtn);
+    btnRow.appendChild(fileInput);
+    containerEl.appendChild(btnRow);
   }
   function renderDocsListEditor(cat) {
     const container = document.getElementById('docsListEditor');
