@@ -248,11 +248,35 @@
     font-size: 12px;
     padding: 10px;
   }
-  .input-right {
+  .input-right-wrap {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
+  }
+  /* 기초자료 입력: 3분할(업로드 방식 / 입력 필드 / 구매 목록) — 체크리스트와 같은 넓은 프레임 사용 */
+  .screen-input-wide { padding-top: 24px; }
+  .input-form-cols {
+    display: flex;
+    flex: 1;
+    gap: 24px;
+  }
+  .input-fields-col {
+    width: 300px;
+    flex-shrink: 0;
+  }
+  .input-fields-col .confirm-grid { grid-template-columns: 1fr; }
+  .input-items-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .input-items-col .items-editor { flex: 0 0 auto; }
+  @media (max-width: 900px) {
+    .input-form-cols { flex-direction: column; }
+    .input-fields-col { width: auto; }
+    .input-fields-col .confirm-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 720px) {
     .input-split { flex-direction: column; gap: 20px; }
@@ -650,9 +674,11 @@
   </div>
 
   <!-- 1. 기초자료 입력 (업로드 + 확인을 한 화면에서 좌우로) -->
-  <div class="screen" id="screen-step-input">
-    <h1>기초자료 입력</h1>
-    <p class="desc">왼쪽에서 영수증을 업로드하거나 엑셀을 불러오면 오른쪽에 자동으로 채워집니다. 직접 입력해도 됩니다. 오른쪽 내용을 확인한 뒤 [다음]을 누르세요.</p>
+  <div class="screen screen-input-wide" id="screen-step-input">
+    <div class="checklist-header">
+      <h1>기초자료 입력</h1>
+      <p class="desc">왼쪽에서 영수증을 업로드하거나 엑셀을 불러오면 자동으로 채워집니다. 직접 입력해도 됩니다. 내용을 확인한 뒤 [다음]을 누르세요.</p>
+    </div>
 
     <div class="input-split">
       <div class="input-left">
@@ -674,44 +700,60 @@
         </div>
       </div>
 
-      <div class="input-right">
-        <div id="confirmFormState">
-          <div class="confirm-grid">
-            <div class="field">
-              <label>결제일자</label>
-              <input type="date" id="f_date" onchange="onConfirmFieldChange()">
-            </div>
-            <div class="field">
-              <label>업체명</label>
-              <input type="text" id="f_vendor" onchange="onConfirmFieldChange()">
-            </div>
-            <div class="field">
-              <label>연구과제명</label>
-              <input type="text" id="f_taskName" list="projectsDatalist" onchange="onTaskNameChange()">
-              <datalist id="projectsDatalist"></datalist>
-            </div>
-            <div class="field">
-              <label>과제번호</label>
-              <input type="text" id="f_taskNumber" onchange="onConfirmFieldChange()">
-            </div>
-            <div class="field">
-              <label>검수년월일</label>
-              <input type="date" id="f_inspectionDate" onchange="onConfirmFieldChange()">
+      <div class="input-right-wrap">
+        <div id="confirmFormState" class="input-form-cols">
+          <div class="input-fields-col">
+            <div class="confirm-grid">
+              <div class="field">
+                <label>결제일자</label>
+                <input type="date" id="f_date" onchange="onConfirmFieldChange()">
+              </div>
+              <div class="field">
+                <label>업체명</label>
+                <input type="text" id="f_vendor" onchange="onConfirmFieldChange()">
+              </div>
+              <div class="field">
+                <label>연구과제명</label>
+                <input type="text" id="f_taskName" list="projectsDatalist" onchange="onTaskNameChange()">
+                <datalist id="projectsDatalist"></datalist>
+              </div>
+              <div class="field">
+                <label>과제번호</label>
+                <input type="text" id="f_taskNumber" onchange="onConfirmFieldChange()">
+              </div>
+              <div class="field">
+                <label>검수년월일</label>
+                <input type="date" id="f_inspectionDate" onchange="onConfirmFieldChange()">
+              </div>
+              <div class="field">
+                <label>구분1</label>
+                <select id="budgetMokSelect" onchange="onBudgetMokChange()"></select>
+              </div>
+              <div class="field">
+                <label>구분2</label>
+                <select id="budgetSubSelect" onchange="onBudgetSubChange()"></select>
+              </div>
+              <div class="field">
+                <label>지출내역</label>
+                <input type="text" id="f_expenseDetail" placeholder="예: 문구류 구매" onchange="onConfirmFieldChange()">
+              </div>
             </div>
           </div>
 
-          <table class="items-editor" id="itemsEditor">
-            <thead>
-              <tr><th>품목명</th><th>규격</th><th>단위</th><th>단가</th><th>수량</th><th></th></tr>
-            </thead>
-            <tbody id="itemsEditorBody"></tbody>
-          </table>
-          <div class="editor-actions">
-            <div class="editor-actions-left">
-              <button class="link-btn" onclick="addItemRow()">+ 품목 추가</button>
-              <button class="link-btn" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
+          <div class="input-items-col">
+            <table class="items-editor" id="itemsEditor">
+              <thead>
+                <tr><th>품목명</th><th>규격</th><th>단위</th><th>단가</th><th>수량</th><th></th></tr>
+              </thead>
+              <tbody id="itemsEditorBody"></tbody>
+            </table>
+            <div class="editor-actions">
+              <div class="editor-actions-left">
+                <button class="link-btn" onclick="addItemRow()">+ 품목 추가</button>
+                <button class="link-btn" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
+              </div>
+              <span class="total-display">합계금액: <b id="totalDisplay">0원</b></span>
             </div>
-            <span class="total-display">합계금액: <b id="totalDisplay">0원</b></span>
           </div>
         </div>
 
@@ -761,14 +803,6 @@
             <option value="fuel">주유비</option>
             <option value="utility">공공요금·우편발송</option>
           </select>
-        </div>
-        <div class="budget-bar">
-          <label for="budgetMokSelect">예산 구분 (목)</label>
-          <select id="budgetMokSelect" onchange="onBudgetMokChange()"></select>
-        </div>
-        <div class="budget-bar">
-          <label for="budgetSubSelect">세부사업명</label>
-          <select id="budgetSubSelect" onchange="onBudgetSubChange()"></select>
         </div>
         <div class="preview-list" id="docList"></div>
       </div>
@@ -958,7 +992,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
     document.getElementById('screen-' + id).classList.add('active');
     // 서식 체크리스트 화면(목록+미리보기+협조사항 3분할)만 프레임을 더 넓게
-    document.querySelector('.frame').classList.toggle('wide', id === 'step-checklist');
+    document.querySelector('.frame').classList.toggle('wide', id === 'step-checklist' || id === 'step-input');
     updateHeader(id);
   }
 
@@ -1639,7 +1673,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     const key = document.getElementById('budgetCategory').value;
     const cat = appSettings.categoryDocs[key];
 
-    renderBudgetMokOptions();
     renderCommonNotice();
     renderNote(document.getElementById('noteBlue'), cat.blue, '💡 자동 안내');
     renderOrangeNote(cat.orange);
@@ -1931,6 +1964,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     receiptData.taskNumber = '';
     receiptData.budgetMok = '';
     receiptData.budgetSub = '';
+    receiptData.expenseDetail = '';
     receiptData.items = [];
     receiptData.receiptImageDataUrl = null;
     // 연구책임자소속/성명, 담당자/연락처 등 프로필성 항목은 3단계 개인설정 기본값에서
@@ -1977,6 +2011,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     taskNumber: '2025-71-0135',
     budgetMok: '',
     budgetSub: '',
+    expenseDetail: '',
     // 개인설정(1. 기본 정보)에서 관리하는 값을 기본값으로 사용 — 단일 출처 유지
     orgName: appSettings.profile.orgName,
     piName: appSettings.profile.piName,
@@ -2053,6 +2088,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     // 이후에는 사용자가 별도로 수정한 값을 그대로 유지한다.
     if (!receiptData.inspectionDate) receiptData.inspectionDate = receiptData.date;
     document.getElementById('f_inspectionDate').value = receiptData.inspectionDate;
+    document.getElementById('f_expenseDetail').value = receiptData.expenseDetail || '';
+    renderBudgetMokOptions();
     renderItemsEditor();
   }
   function onConfirmFieldChange() {
@@ -2060,6 +2097,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     receiptData.vendor = document.getElementById('f_vendor').value;
     receiptData.taskNumber = document.getElementById('f_taskNumber').value;
     receiptData.inspectionDate = document.getElementById('f_inspectionDate').value;
+    receiptData.expenseDetail = document.getElementById('f_expenseDetail').value;
     refreshCurrentPreview();
   }
 
@@ -2264,14 +2302,11 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // 회계처리 목록: 완료 처리 기록 추가 + 조회 화면 + 엑셀 다운로드
   // ============================================================
   function addLedgerEntry() {
-    const categorySelect = document.getElementById('budgetCategory');
-    const categoryLabel = categorySelect && categorySelect.selectedOptions[0]
-      ? categorySelect.selectedOptions[0].textContent : '';
     ledgerEntries.push({
       taskName: receiptData.taskName,
       mok: receiptData.budgetMok || '',
       sebu: receiptData.budgetSub || '',
-      category: categoryLabel,
+      category: receiptData.expenseDetail || '',
       date: receiptData.date,
       vendor: receiptData.vendor,
       amount: calcTotal(),
