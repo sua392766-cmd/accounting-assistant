@@ -895,8 +895,8 @@
     <div class="header-right">
       <span class="step-label" id="stepLabel"></span>
       <span class="header-divider" id="headerDivider"></span>
-      <button class="header-link" onclick="openSettings()">⚙ 개인설정</button>
-      <button class="header-link" onclick="openLedger()">📋 회계처리 목록</button>
+      <button class="header-link" id="settingsLinkBtn" onclick="openSettings()">⚙ 개인설정</button>
+      <button class="header-link" id="ledgerLinkBtn" onclick="openLedger()">📋 회계처리 목록</button>
     </div>
   </header>
 
@@ -1102,7 +1102,6 @@
       </table>
     </div>
     <div class="btn-row">
-      <button class="secondary" onclick="closeUtilityScreen()">← 돌아가기</button>
       <button class="primary" onclick="downloadLedgerExcel()">⬇ 엑셀 다운로드</button>
     </div>
   </div>
@@ -1287,6 +1286,18 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     } else {
       label.textContent = '';
     }
+
+    // 우상단 두 바로가기는 "지금 보고 있는 화면" 쪽 자리가 대신 돌아가기 역할을
+    // 한다(따로 돌아가기 버튼을 만들지 않는다) — 예: 개인설정 화면에서는 "⚙
+    // 개인설정" 자리가 "← 기초자료 입력"(열기 전 단계)으로 바뀐다. 나머지 한
+    // 칸은 그대로 다른 화면으로 가는 바로가기로 남는다.
+    const settingsBtn = document.getElementById('settingsLinkBtn');
+    const ledgerBtn = document.getElementById('ledgerLinkBtn');
+    const backLabel = '← ' + STEP_NAMES[currentStepIndex];
+    settingsBtn.textContent = (id === 'settings') ? backLabel : '⚙ 개인설정';
+    settingsBtn.onclick = (id === 'settings') ? closeUtilityScreen : openSettings;
+    ledgerBtn.textContent = (id === 'ledger') ? backLabel : '📋 회계처리 목록';
+    ledgerBtn.onclick = (id === 'ledger') ? closeUtilityScreen : openLedger;
   }
 
   function renderDots(activeIdx) {
