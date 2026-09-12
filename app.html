@@ -2384,12 +2384,12 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // ---- 새 작업 (기초자료 입력 화면의 버튼을 눌렀을 때만 데이터가 초기화됨) ----
   function confirmResetInput() {
     showConfirmModal(
-      '새 작업을 시작할까요? 지금까지 입력·업로드한 내용은 모두 사라지며 되돌릴 수 없습니다.',
+      '새 작업을 시작할까요? 연구과제명·과제번호를 제외한 나머지 입력·업로드 내용은 모두 사라지며 되돌릴 수 없습니다.',
       function () {
         receiptData.date = '';
         receiptData.vendor = '';
-        receiptData.taskName = '';
-        receiptData.taskNumber = '';
+        // 연구과제명/과제번호는 같은 과제로 여러 건을 연달아 처리하는 경우가 많아
+        // 새 작업을 시작해도 초기화하지 않고 그대로 유지한다.
         receiptData.budgetMok = '';
         receiptData.budgetSub = '';
         receiptData.expenseDetail = '';
