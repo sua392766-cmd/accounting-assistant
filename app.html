@@ -220,6 +220,20 @@
     align-self: center;
     color: #c33;
   }
+  /* 새 작업: 텍스트 링크가 아니라 눌러야 할 버튼임을 명확히 보이도록 테두리 박스로 표시 */
+  .btn-row .danger-box {
+    margin-left: auto;
+    align-self: center;
+    color: #c33;
+    border: 1px solid #e0a0a0;
+    background: #fff5f5;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  .btn-row .danger-box:hover { background: #ffe8e8; }
   /* 기초자료 입력: 좌측(업로드 방식) + 우측(편집 가능한 확인 폼) 2분할 */
   .input-split {
     display: flex;
@@ -273,6 +287,12 @@
     flex-direction: column;
   }
   .input-items-col .items-editor { flex: 0 0 auto; }
+  .input-items-col .top-fields-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .input-items-col .top-fields-row .field { flex: 1; }
   @media (max-width: 900px) {
     .input-form-cols { flex-direction: column; }
     .input-fields-col { width: auto; }
@@ -705,14 +725,6 @@
           <div class="input-fields-col">
             <div class="confirm-grid">
               <div class="field">
-                <label>결제일자</label>
-                <input type="date" id="f_date" onchange="onConfirmFieldChange()">
-              </div>
-              <div class="field">
-                <label>업체명</label>
-                <input type="text" id="f_vendor" onchange="onConfirmFieldChange()">
-              </div>
-              <div class="field">
                 <label>연구과제명</label>
                 <input type="text" id="f_taskName" list="projectsDatalist" onchange="onTaskNameChange()">
                 <datalist id="projectsDatalist"></datalist>
@@ -720,10 +732,6 @@
               <div class="field">
                 <label>과제번호</label>
                 <input type="text" id="f_taskNumber" onchange="onConfirmFieldChange()">
-              </div>
-              <div class="field">
-                <label>검수년월일</label>
-                <input type="date" id="f_inspectionDate" onchange="onConfirmFieldChange()">
               </div>
               <div class="field">
                 <label>구분1</label>
@@ -741,6 +749,16 @@
           </div>
 
           <div class="input-items-col">
+            <div class="field-row top-fields-row">
+              <div class="field">
+                <label>결제일자</label>
+                <input type="date" id="f_date" onchange="onConfirmFieldChange()">
+              </div>
+              <div class="field">
+                <label>업체명</label>
+                <input type="text" id="f_vendor" onchange="onConfirmFieldChange()">
+              </div>
+            </div>
             <table class="items-editor" id="itemsEditor">
               <thead>
                 <tr><th>품목명</th><th>규격</th><th>단위</th><th>단가</th><th>수량</th><th></th></tr>
@@ -777,7 +795,7 @@
     </div>
 
     <div class="btn-row">
-      <button class="link-btn danger-link" onclick="confirmResetInput()">↺ 새 작업</button>
+      <button class="danger-box" onclick="confirmResetInput()">↺ 새 작업 (데이터 초기화)</button>
       <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
     </div>
     <div class="dots" id="dots1"></div>
@@ -1686,9 +1704,13 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     appSettings.budgetGroups.forEach(function (g) {
       if (g.mok && uniqueMoks.indexOf(g.mok) === -1) uniqueMoks.push(g.mok);
     });
+    // 마스터데이터에 없는 값(직접 입력했던 값 등)이 이미 선택돼 있으면 목록에서 사라지지 않도록 추가
+    if (receiptData.budgetMok && uniqueMoks.indexOf(receiptData.budgetMok) === -1) {
+      uniqueMoks.push(receiptData.budgetMok);
+    }
     sel.innerHTML = '<option value="">(선택 안 함)</option>' + uniqueMoks.map(function (m) {
       return '<option value="' + esc(m) + '"' + (receiptData.budgetMok === m ? ' selected' : '') + '>' + esc(m) + '</option>';
-    }).join('');
+    }).join('') + '<option value="__custom__">✏️ 직접 입력...</option>';
     renderBudgetSubOptions();
   }
   function renderBudgetSubOptions() {
@@ -1696,18 +1718,46 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     const subs = appSettings.budgetGroups
       .filter(function (g) { return g.mok === mok && g.sub; })
       .map(function (g) { return g.sub; });
+    if (receiptData.budgetSub && subs.indexOf(receiptData.budgetSub) === -1) {
+      subs.push(receiptData.budgetSub);
+    }
     const sel = document.getElementById('budgetSubSelect');
     sel.innerHTML = '<option value="">(선택 안 함)</option>' + subs.map(function (s) {
       return '<option value="' + esc(s) + '"' + (receiptData.budgetSub === s ? ' selected' : '') + '>' + esc(s) + '</option>';
-    }).join('');
+    }).join('') + '<option value="__custom__">✏️ 직접 입력...</option>';
   }
+  // 마스터데이터에 없는 값을 그때그때 입력해 쓸 수 있도록 "직접 입력" 옵션을 지원한다
   function onBudgetMokChange() {
-    receiptData.budgetMok = document.getElementById('budgetMokSelect').value;
+    const sel = document.getElementById('budgetMokSelect');
+    if (sel.value === '__custom__') {
+      const v = (prompt('구분1을 직접 입력하세요. (예: 수용비)') || '').trim();
+      if (!v) {
+        sel.value = receiptData.budgetMok || '';
+      } else {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v;
+        sel.insertBefore(opt, sel.lastElementChild);
+        sel.value = v;
+      }
+    }
+    receiptData.budgetMok = sel.value === '__custom__' ? '' : sel.value;
     receiptData.budgetSub = ''; // 목이 바뀌면 세부사업명 선택 초기화
     renderBudgetSubOptions();
   }
   function onBudgetSubChange() {
-    receiptData.budgetSub = document.getElementById('budgetSubSelect').value;
+    const sel = document.getElementById('budgetSubSelect');
+    if (sel.value === '__custom__') {
+      const v = (prompt('구분2를 직접 입력하세요. (예: 센터운용물품비)') || '').trim();
+      if (!v) {
+        sel.value = receiptData.budgetSub || '';
+      } else {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v;
+        sel.insertBefore(opt, sel.lastElementChild);
+        sel.value = v;
+      }
+    }
+    receiptData.budgetSub = sel.value === '__custom__' ? '' : sel.value;
   }
 
   function updateChecklist() {
@@ -1919,9 +1969,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         };
       });
     }
-    // 검수년월일 기본값을 새로 인식된 납품일자(결제일자)에 맞춰 다시 채운다
-    // (populateConfirmForm에서 값이 있으면 덮어쓰지 않으므로 여기서 명시적으로 갱신)
-    receiptData.inspectionDate = receiptData.date;
   }
 
   (function setupReceiptDropzone() {
@@ -1999,7 +2046,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   function confirmResetInput() {
     if (!confirm('새 작업을 시작할까요? 지금까지 입력·업로드한 내용은 모두 사라지며 되돌릴 수 없습니다.')) return;
     receiptData.date = '';
-    receiptData.inspectionDate = '';
     receiptData.vendor = '';
     receiptData.taskName = '';
     receiptData.taskNumber = '';
@@ -2046,7 +2092,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // ============================================================
   const receiptData = {
     date: '2026-09-08',
-    inspectionDate: '2026-09-08',
     vendor: '든든문구 원주점',
     taskName: '2026년 원주시정신건강복지센터 통합정신건강증진사업',
     taskNumber: '2025-71-0135',
@@ -2125,10 +2170,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     document.getElementById('f_vendor').value = receiptData.vendor;
     document.getElementById('f_taskName').value = receiptData.taskName;
     document.getElementById('f_taskNumber').value = receiptData.taskNumber;
-    // 검수년월일: 값이 없으면(첫 채움 시) 납품일자(결제일자)와 동일하게 기본값 설정.
-    // 이후에는 사용자가 별도로 수정한 값을 그대로 유지한다.
-    if (!receiptData.inspectionDate) receiptData.inspectionDate = receiptData.date;
-    document.getElementById('f_inspectionDate').value = receiptData.inspectionDate;
     document.getElementById('f_expenseDetail').value = receiptData.expenseDetail || '';
     renderBudgetMokOptions();
     renderItemsEditor();
@@ -2137,7 +2178,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     receiptData.date = document.getElementById('f_date').value;
     receiptData.vendor = document.getElementById('f_vendor').value;
     receiptData.taskNumber = document.getElementById('f_taskNumber').value;
-    receiptData.inspectionDate = document.getElementById('f_inspectionDate').value;
     receiptData.expenseDetail = document.getElementById('f_expenseDetail').value;
     refreshCurrentPreview();
   }
@@ -2175,7 +2215,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     const totalFormatted = '금' + total.toLocaleString() + '원';
     const totalKorean = '(금' + numberToKorean(total) + '원)';
     const dateKr = formatDateKr(receiptData.date);
-    const inspectionDateKr = formatDateKr(receiptData.inspectionDate || receiptData.date);
+    // 검수년월일은 별도 입력을 없애고 결제일자로 바로 연동한다.
+    const inspectionDateKr = dateKr;
 
     if (formKey === 'receipt') {
       return {
