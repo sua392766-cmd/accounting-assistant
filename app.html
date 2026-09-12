@@ -579,6 +579,8 @@
   .settings-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
   .settings-table th, .settings-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
   .settings-table th { background: #f7f7f7; font-size: 12px; }
+  .ledger-table-wrap { overflow-x: auto; margin-bottom: 10px; }
+  .ledger-table-wrap .settings-table { min-width: 640px; }
   .settings-table input { width: 100%; border: none; font-size: 13px; padding: 4px; }
   .settings-table input:focus { background: #eef6ff; outline: none; }
   .settings-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -642,7 +644,7 @@
     <p class="desc">원주시정신건강복지센터 회계증빙 서식 자동 작성 도구</p>
     <div class="home-menu">
       <button class="main" onclick="startFlow()">새 영수증 처리 시작</button>
-      <button onclick="showScreen('ledger')">회계처리 목록</button>
+      <button onclick="openLedger()">회계처리 목록</button>
       <button onclick="openSettings()">개인설정</button>
     </div>
   </div>
@@ -760,6 +762,14 @@
             <option value="utility">공공요금·우편발송</option>
           </select>
         </div>
+        <div class="budget-bar">
+          <label for="budgetMokSelect">예산 구분 (목)</label>
+          <select id="budgetMokSelect" onchange="onBudgetMokChange()"></select>
+        </div>
+        <div class="budget-bar">
+          <label for="budgetSubSelect">세부사업명</label>
+          <select id="budgetSubSelect" onchange="onBudgetSubChange()"></select>
+        </div>
         <div class="preview-list" id="docList"></div>
       </div>
 
@@ -810,11 +820,18 @@
   <!-- 회계처리 목록 -->
   <div class="screen" id="screen-ledger">
     <h1>회계처리 목록</h1>
-    <p class="desc">지금까지 처리한 건들을 엑셀 시트 형태의 표로 조회합니다.</p>
-    <div class="placeholder-box">(표 컬럼: 연구과제명 / 목 / 세목 / 항목 / 날짜 / 업체명 / 금액)</div>
+    <p class="desc">전체 서식 PDF 다운로드를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.</p>
+    <div class="ledger-table-wrap">
+      <table class="settings-table">
+        <thead>
+          <tr><th>연구과제명</th><th>목</th><th>세목</th><th>항목</th><th>날짜</th><th>업체명</th><th>금액</th></tr>
+        </thead>
+        <tbody id="ledgerTableBody"></tbody>
+      </table>
+    </div>
     <div class="btn-row">
       <button class="secondary" onclick="goHome()">홈으로</button>
-      <button class="primary" onclick="return false;">⬇ 엑셀 다운로드</button>
+      <button class="primary" onclick="downloadLedgerExcel()">⬇ 엑셀 다운로드</button>
     </div>
   </div>
 
@@ -1182,6 +1199,29 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
 
   let appSettings = loadSettings();
+
+  // ============================================================
+  // 회계처리 목록 (4단계): 완료 처리(전체 서식 PDF 다운로드)한 건들의 기록.
+  // 개인설정과 마찬가지로 이 브라우저의 localStorage에 저장된다.
+  // ============================================================
+  const LEDGER_STORAGE_KEY = 'receiptAppLedger_v1';
+  function loadLedger() {
+    try {
+      const raw = localStorage.getItem(LEDGER_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.warn('회계처리 목록을 불러오지 못했습니다.', e);
+      return [];
+    }
+  }
+  function saveLedger() {
+    try {
+      localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(ledgerEntries));
+    } catch (e) {
+      console.warn('회계처리 목록 저장 실패', e);
+    }
+  }
+  let ledgerEntries = loadLedger();
 
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1569,10 +1609,37 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     reader.readAsText(file);
   }
 
+  // ---- 예산 구분(목 - 세부사업명) 선택: 회계처리 목록의 "목"/"세목" 컬럼에 쓰인다 ----
+  function renderBudgetMokOptions() {
+    const sel = document.getElementById('budgetMokSelect');
+    sel.innerHTML = '<option value="">(선택 안 함)</option>' + appSettings.budgetGroups.map(function (g) {
+      return '<option value="' + esc(g.mok) + '"' + (receiptData.budgetMok === g.mok ? ' selected' : '') + '>' + esc(g.mok) + '</option>';
+    }).join('');
+    renderBudgetSubOptions();
+  }
+  function renderBudgetSubOptions() {
+    const mok = document.getElementById('budgetMokSelect').value;
+    const group = appSettings.budgetGroups.find(function (g) { return g.mok === mok; });
+    const subs = group ? group.subs : [];
+    const sel = document.getElementById('budgetSubSelect');
+    sel.innerHTML = '<option value="">(선택 안 함)</option>' + subs.map(function (s) {
+      return '<option value="' + esc(s) + '"' + (receiptData.budgetSub === s ? ' selected' : '') + '>' + esc(s) + '</option>';
+    }).join('');
+  }
+  function onBudgetMokChange() {
+    receiptData.budgetMok = document.getElementById('budgetMokSelect').value;
+    receiptData.budgetSub = ''; // 목이 바뀌면 세부사업명 선택 초기화
+    renderBudgetSubOptions();
+  }
+  function onBudgetSubChange() {
+    receiptData.budgetSub = document.getElementById('budgetSubSelect').value;
+  }
+
   function updateChecklist() {
     const key = document.getElementById('budgetCategory').value;
     const cat = appSettings.categoryDocs[key];
 
+    renderBudgetMokOptions();
     renderCommonNotice();
     renderNote(document.getElementById('noteBlue'), cat.blue, '💡 자동 안내');
     renderOrangeNote(cat.orange);
@@ -1862,6 +1929,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     receiptData.vendor = '';
     receiptData.taskName = '';
     receiptData.taskNumber = '';
+    receiptData.budgetMok = '';
+    receiptData.budgetSub = '';
     receiptData.items = [];
     receiptData.receiptImageDataUrl = null;
     // 연구책임자소속/성명, 담당자/연락처 등 프로필성 항목은 3단계 개인설정 기본값에서
@@ -1906,6 +1975,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     vendor: '든든문구 원주점',
     taskName: '2026년 원주시정신건강복지센터 통합정신건강증진사업',
     taskNumber: '2025-71-0135',
+    budgetMok: '',
+    budgetSub: '',
     // 개인설정(1. 기본 정보)에서 관리하는 값을 기본값으로 사용 — 단일 출처 유지
     orgName: appSettings.profile.orgName,
     piName: appSettings.profile.piName,
@@ -2172,6 +2243,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       if (i >= keys.length) {
         document.body.removeChild(hiddenFrame);
         box.textContent = '전체 서식 PDF 다운로드가 완료되었습니다.';
+        addLedgerEntry();
         return;
       }
       const key = keys[i];
@@ -2186,6 +2258,68 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       };
     }
     next();
+  }
+
+  // ============================================================
+  // 회계처리 목록: 완료 처리 기록 추가 + 조회 화면 + 엑셀 다운로드
+  // ============================================================
+  function addLedgerEntry() {
+    const categorySelect = document.getElementById('budgetCategory');
+    const categoryLabel = categorySelect && categorySelect.selectedOptions[0]
+      ? categorySelect.selectedOptions[0].textContent : '';
+    ledgerEntries.push({
+      taskName: receiptData.taskName,
+      mok: receiptData.budgetMok || '',
+      sebu: receiptData.budgetSub || '',
+      category: categoryLabel,
+      date: receiptData.date,
+      vendor: receiptData.vendor,
+      amount: calcTotal(),
+      completedAt: new Date().toISOString(),
+    });
+    saveLedger();
+  }
+
+  function openLedger() {
+    renderLedgerTable();
+    showScreen('ledger');
+  }
+
+  function renderLedgerTable() {
+    const body = document.getElementById('ledgerTableBody');
+    if (!ledgerEntries.length) {
+      body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;padding:24px;">아직 완료 처리된 건이 없습니다. PDF 다운로드를 완료하면 여기에 자동으로 추가됩니다.</td></tr>';
+      return;
+    }
+    body.innerHTML = ledgerEntries.map(function (e) {
+      return '<tr>' +
+        '<td>' + escHtml(e.taskName) + '</td>' +
+        '<td>' + escHtml(e.mok) + '</td>' +
+        '<td>' + escHtml(e.sebu) + '</td>' +
+        '<td>' + escHtml(e.category) + '</td>' +
+        '<td>' + escHtml(e.date) + '</td>' +
+        '<td>' + escHtml(e.vendor) + '</td>' +
+        '<td style="text-align:right;">' + (Number(e.amount) || 0).toLocaleString() + '원</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  function downloadLedgerExcel() {
+    const headers = ['연구과제명', '목', '세목', '항목', '날짜', '업체명', '금액'];
+    const rows = ledgerEntries.map(function (e) {
+      return [e.taskName, e.mok, e.sebu, e.category, e.date, e.vendor, e.amount];
+    });
+    const csv = [headers].concat(rows).map(function (row) { return row.map(csvEscape).join(','); }).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.download = '회계처리_목록_' + dateStr + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // 초기 렌더링 (기초자료 입력 화면의 우측 폼이 처음부터 샘플 데이터로 채워져 보이도록)
