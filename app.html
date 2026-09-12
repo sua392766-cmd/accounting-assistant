@@ -284,9 +284,8 @@
     align-self: center;
     color: #c33;
   }
-  /* 새 작업: 텍스트 링크가 아니라 눌러야 할 버튼임을 명확히 보이도록 테두리 박스로 표시 */
-  .btn-row .danger-box {
-    align-self: center;
+  /* 새 작업(직접 입력 겸용): 텍스트 링크가 아니라 눌러야 할 버튼임을 명확히 보이도록 테두리 박스로 표시 */
+  .danger-box {
     color: #c33;
     border: 1px solid #e0a0a0;
     background: #fff5f5;
@@ -296,7 +295,8 @@
     font-weight: bold;
     text-decoration: none;
   }
-  .btn-row .danger-box:hover { background: #ffe8e8; }
+  .danger-box:hover { background: #ffe8e8; }
+  .btn-row .danger-box { align-self: center; }
   /* 기초자료 입력: 좌측(업로드 방식) + 우측(편집 가능한 확인 폼) 2분할 */
   .input-split {
     display: flex;
@@ -310,6 +310,13 @@
     flex-direction: column;
     gap: 20px;
   }
+  .input-left-group .row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .input-left-group .row button:not(.link-btn) { flex: 1; }
+  .input-left-group .row .link-btn { flex-shrink: 0; white-space: nowrap; }
   .input-left-group {
     display: flex;
     flex-direction: column;
@@ -869,12 +876,17 @@
           </div>
         </div>
         <div class="input-left-group">
-          <button onclick="focusManualEntry()">⌨️ 직접 입력</button>
+          <button class="danger-box" style="width:100%; box-sizing:border-box;" onclick="confirmResetInput()">↺ 직접 입력 / 새 작업</button>
         </div>
         <div class="input-left-group">
-          <button onclick="document.getElementById('excelUploadInput').click()">📊 엑셀 업로드</button>
+          <div class="row">
+            <button onclick="document.getElementById('excelUploadInput').click()">📊 엑셀 업로드</button>
+            <button class="link-btn entry-option-link" onclick="downloadExcelTemplate()">⬇ 양식</button>
+          </div>
           <input type="file" id="excelUploadInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="onExcelFileSelected(this.files[0])">
-          <button class="link-btn entry-option-link" onclick="downloadExcelTemplate()">⬇ 양식 다운로드</button>
+        </div>
+        <div class="input-left-group">
+          <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
         </div>
       </div>
 
@@ -925,6 +937,7 @@
             <div class="editor-actions">
               <div class="editor-actions-left">
                 <button class="link-btn" onclick="addItemRow()">+ 품목 추가</button>
+                <button class="link-btn" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
               </div>
               <span class="total-display">합계금액: <b id="totalDisplay">0원</b></span>
             </div>
@@ -950,12 +963,6 @@
       </div>
     </div>
 
-    <div class="btn-row">
-      <button class="danger-box" onclick="confirmResetInput()">↺ 새 작업 (데이터 초기화)</button>
-      <button class="secondary" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
-      <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
-    </div>
-    <div class="dots" id="dots1"></div>
   </div>
 
   <!-- 2. 서식 체크리스트 + 미리보기 (통합) -->
@@ -1014,7 +1021,6 @@
     <div class="btn-row">
       <button class="secondary" onclick="goHome()">완료 (홈으로)</button>
     </div>
-    <div class="dots" id="dots2"></div>
   </div>
 
   <!-- 회계처리 목록 -->
@@ -2275,31 +2281,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     setConfirmState('form');
     document.getElementById('receiptUploadInput').click();
   }
-  // [직접 입력] 버튼: 연구과제명/과제번호는 그대로 두고(같은 과제로 여러 건 처리하는
-  // 경우가 많음) 나머지 입력값은 새로 입력할 수 있게 비워준다.
-  function focusManualEntry() {
-    receiptData.date = '';
-    receiptData.vendor = '';
-    receiptData.budgetMok = '';
-    receiptData.budgetSub = '';
-    receiptData.expenseDetail = '';
-    receiptData.items = [];
-    receiptData.receiptImageDataUrl = null;
-    document.getElementById('receiptUploadInput').value = '';
-    document.getElementById('excelUploadInput').value = '';
-    // 이미 서식 체크리스트로 넘어가 미리보기가 열려있던 경우, 초기화된 값(특히 영수증
-    // 이미지가 지워졌다는 것)이 그 미리보기에도 바로 반영되게 한다. 미리보기 자체는
-    // 계속 재사용되므로 사용자가 서식 안에서 직접 조정한 내용(사진 크기 등)은
-    // 이 시점 전까지는 그대로 유지된다.
-    refreshCurrentPreview();
-    skipToConfirm();
-    // 연구과제명부터 순서대로 확인하도록 첫 입력칸(연구과제명)에 포커스를 준다
-    const el = document.getElementById('f_taskName');
-    if (el) {
-      el.focus();
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }
+  // "직접 입력"과 "새 작업(데이터 초기화)"을 하나로 합쳐 confirmResetInput() 하나로
+  // 처리한다 (아래 정의부 참고). 별도의 즉시-실행 버전은 더 이상 두지 않는다.
 
   // ---- 영수증 업로드: 파일 선택 버튼 + 드래그앤드롭 ----
   function onReceiptFileSelected(file) {
