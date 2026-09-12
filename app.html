@@ -61,7 +61,7 @@
     color: #888;
   }
   .header-right { display: flex; align-items: center; gap: 14px; }
-  header .help-link {
+  header .header-link {
     color: #555;
     text-decoration: underline;
     cursor: pointer;
@@ -843,7 +843,8 @@
     <button class="home-link" onclick="goHome()">🏠 홈으로</button>
     <div class="header-right">
       <span class="step-label" id="stepLabel"></span>
-      <button class="help-link" onclick="openHelpModal()">❓ 도움말</button>
+      <button class="header-link" onclick="openSettings()">⚙ 설정</button>
+      <button class="header-link" onclick="openLedger()">📋 회계처리 목록</button>
     </div>
   </header>
 
