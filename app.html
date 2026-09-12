@@ -583,6 +583,25 @@
     flex: 1; font-size: 13.5px; font-weight: bold; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
   }
   .budget-subs-list { padding-left: 16px; }
+  .settings-help-box {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #eaf2ff;
+    border: 1px solid #a9c8f5;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #1e4d8f;
+    line-height: 1.6;
+  }
+  .settings-help-box strong { display: block; margin-bottom: 4px; }
+  .settings-help-box p { margin: 4px 0; }
+  .settings-help-box ol { margin: 6px 0 0 0; padding-left: 18px; }
+  .settings-help-box code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 11.5px;
+  }
 </style>
 </head>
 <body>
@@ -692,7 +711,7 @@
     <div class="btn-row">
       <button class="secondary" onclick="goHome()">홈으로</button>
       <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
-      <button class="link-btn danger-link" onclick="confirmResetInput()">↺ 입력자료 초기화</button>
+      <button class="link-btn danger-link" onclick="confirmResetInput()">↺ 새 작업</button>
     </div>
     <div class="dots" id="dots1"></div>
   </div>
@@ -791,6 +810,17 @@
     <div class="settings-section">
       <h3>2. AI 모델 선택</h3>
       <div id="aiModelOptions"></div>
+      <div class="settings-help-box">
+        <strong>💡 영수증 인식이 갑자기 안 될 때</strong>
+        <p>Google이 가끔 특정 Gemini 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜨면 이 문제부터 의심해보세요.</p>
+        <ol>
+          <li>영수증을 업로드했는데 "인식 실패" 화면이 뜨면, 이 앱을 만들 때 쓰던 Claude 대화창에 "인식 안돼"라고 말해서 원인을 확인해달라고 하세요.</li>
+          <li>직접 확인하려면: GitHub 저장소의 <code>api/recognize.js</code> 파일에서
+            <code>generativelanguage.googleapis.com/v1beta/models/</code> 뒤에 있는 모델 이름을 확인하세요.</li>
+          <li>오류 메시지에 "is no longer available"(더 이상 사용할 수 없음)와 함께 새 모델명이 안내되면,
+            그 이름으로 이 줄만 바꾸고 GitHub에서 "Commit changes"를 누르면 자동으로 재배포됩니다.</li>
+        </ol>
+      </div>
     </div>
 
     <div class="settings-section">
@@ -854,6 +884,16 @@
         </select>
       </div>
       <div id="printNoteEditor"></div>
+    </div>
+
+    <div class="settings-section">
+      <h3>설정 백업 / 복원</h3>
+      <p class="desc" style="margin-bottom:10px;">이 설정은 지금 쓰고 있는 브라우저에만 저장되어 있어서, 브라우저 데이터를 지우거나 다른 컴퓨터로 옮기면 사라집니다. 파일로 내려받아두면 나중에 그대로 복원할 수 있습니다.</p>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="secondary" onclick="exportSettings()">⬇ 설정 백업 다운로드</button>
+        <button class="secondary" onclick="document.getElementById('settingsImportInput').click()">⬆ 백업 파일 불러오기</button>
+        <input type="file" id="settingsImportInput" accept=".json" style="display:none" onchange="importSettingsFile(this.files[0])">
+      </div>
     </div>
 
     <div class="btn-row">
@@ -1457,6 +1497,52 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     renderStringListEditor(document.getElementById('printNoteEditor'), appSettings.printNotes[key], '+ 확인사항 추가');
   }
 
+  // ---- 설정 백업 / 복원 ----
+  function exportSettings() {
+    const blob = new Blob([JSON.stringify(appSettings, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.download = '영수증앱_개인설정_백업_' + dateStr + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function importSettingsFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      let parsed;
+      try {
+        parsed = JSON.parse(e.target.result);
+      } catch (err) {
+        alert('올바른 백업 파일(JSON)이 아닙니다.');
+        document.getElementById('settingsImportInput').value = '';
+        return;
+      }
+      if (!confirm('지금 설정을 이 백업 파일 내용으로 덮어쓸까요? 되돌릴 수 없습니다.')) {
+        document.getElementById('settingsImportInput').value = '';
+        return;
+      }
+      const base = defaultSettings();
+      appSettings = Object.assign(base, parsed, {
+        profile: Object.assign(base.profile, parsed.profile),
+        printNotes: Object.assign(base.printNotes, parsed.printNotes),
+      });
+      saveSettings();
+      renderSettingsScreen();
+      renderProjectDropdownOptions();
+      document.getElementById('settingsImportInput').value = '';
+      alert('설정을 불러왔습니다.');
+    };
+    reader.onerror = function () {
+      alert('파일을 읽지 못했습니다. 다시 시도해주세요.');
+    };
+    reader.readAsText(file);
+  }
+
   function updateChecklist() {
     const key = document.getElementById('budgetCategory').value;
     const cat = appSettings.categoryDocs[key];
@@ -1742,9 +1828,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     URL.revokeObjectURL(url);
   }
 
-  // ---- 입력자료 초기화 (기초자료 입력 화면의 버튼을 눌렀을 때만 동작) ----
+  // ---- 새 작업 (기초자료 입력 화면의 버튼을 눌렀을 때만 데이터가 초기화됨) ----
   function confirmResetInput() {
-    if (!confirm('지금까지 입력/업로드한 자료를 모두 초기화할까요?\n이 작업은 되돌릴 수 없습니다.')) return;
+    if (!confirm('새 작업을 시작할까요? 지금까지 입력·업로드한 내용은 모두 사라지며 되돌릴 수 없습니다.')) return;
     receiptData.date = '';
     receiptData.inspectionDate = '';
     receiptData.vendor = '';
@@ -1760,7 +1846,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     currentFormKey = null;
     populateConfirmForm();
     setConfirmState('form');
-    alert('입력자료가 초기화되었습니다.');
+    alert('새 작업을 시작합니다.');
   }
 
   // ※ 2단계에서는 recognizeReceipt() 결과로 receiptData를 채운 뒤 이 함수를 호출합니다.
