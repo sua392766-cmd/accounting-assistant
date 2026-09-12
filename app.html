@@ -135,6 +135,7 @@
   }
   .help-topic.open .help-topic-body { display: block; }
   .help-modal-empty { color: #999; font-size: 13px; padding: 12px 4px; }
+  .confirm-modal-box { max-width: 420px; }
   .screen {
     display: none;
     flex: 1;
@@ -596,6 +597,28 @@
     border: 1px solid #ccc;
     border-radius: 6px;
   }
+  /* 구분1/구분2 드롭박스도 위아래 입력칸(과제번호/지출내역)과 크기가 똑같아 보이도록 통일 */
+  .field select {
+    width: 100%;
+    font-size: 14px;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+  }
+  .field input[readonly] {
+    background: #f3f3f3;
+    color: #666;
+  }
+  /* 지출내역: 마스터데이터가 아니라 매번 직접 타이핑해서 채우는 칸임을 파란색으로 강조 */
+  .field input.field-manual-input {
+    background: #eef6ff;
+    border-color: #7fb2e8;
+  }
+  .field input.field-manual-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 1.5px #3b82f6;
+  }
   table.items-editor {
     width: 100%;
     border-collapse: collapse;
@@ -817,7 +840,7 @@
     <div class="input-split">
       <div class="input-left">
         <div class="input-left-group">
-          <button onclick="document.getElementById('receiptUploadInput').click()">📎 영수증 업로드</button>
+          <button onclick="document.getElementById('receiptUploadInput').click()">📎 영수증 추가</button>
           <input type="file" id="receiptUploadInput" accept="image/*" style="display:none" onchange="onReceiptFileSelected(this.files[0])">
           <div class="placeholder-box dropzone" id="receiptDropzone">
             영수증 이미지를 여기로 끌어다 놓아도 됩니다.<br>
@@ -840,12 +863,11 @@
             <div class="confirm-grid">
               <div class="field">
                 <label>연구과제명</label>
-                <input type="text" id="f_taskName" list="projectsDatalist" onchange="onTaskNameChange()">
-                <datalist id="projectsDatalist"></datalist>
+                <select id="f_taskName" onchange="onTaskNameChange()"></select>
               </div>
               <div class="field">
                 <label>과제번호</label>
-                <input type="text" id="f_taskNumber" onchange="onConfirmFieldChange()">
+                <input type="text" id="f_taskNumber" readonly>
               </div>
               <div class="field">
                 <label>구분1</label>
@@ -857,7 +879,7 @@
               </div>
               <div class="field">
                 <label>지출내역</label>
-                <input type="text" id="f_expenseDetail" placeholder="예: 문구류 구매" onchange="onConfirmFieldChange()">
+                <input type="text" id="f_expenseDetail" class="field-manual-input" placeholder="예: 문구류 구매" onchange="onConfirmFieldChange()">
               </div>
             </div>
           </div>
@@ -1119,6 +1141,25 @@
       <button class="help-modal-close" onclick="closeHelpModal()">✕</button>
     </div>
     <div class="help-modal-body" id="helpModalBody"></div>
+  </div>
+</div>
+
+<!-- 브라우저 기본 confirm() 대신 쓰는 확인 팝업. 일부 환경에서 confirm()이 조용히
+     막히는 경우가 있어(경고문구가 아예 안 뜸), 되돌릴 수 없는 동작(초기화 등)은
+     이 커스텀 팝업으로 확인을 받는다. -->
+<div class="help-modal-overlay" id="confirmModalOverlay" onclick="if (event.target === this) closeConfirmModal();">
+  <div class="help-modal-box confirm-modal-box">
+    <div class="help-modal-header">
+      <h2 id="confirmModalTitle">확인</h2>
+      <button class="help-modal-close" onclick="closeConfirmModal()">✕</button>
+    </div>
+    <div class="help-modal-body">
+      <p id="confirmModalMessage" style="margin:0 0 18px 0; line-height:1.6;"></p>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="secondary" onclick="closeConfirmModal()">취소</button>
+        <button class="danger-box" id="confirmModalOkBtn" style="margin-left:0;">확인</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1538,22 +1579,29 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     saveSettings();
     renderProjectsTable();
   }
+  // 연구과제명 드롭박스: 개인설정에 등록된 과제 목록으로 채운다.
+  // (등록되지 않은 값이 이미 선택돼 있으면 사라지지 않도록 옵션에 임시로 포함)
   function renderProjectDropdownOptions() {
-    const dl = document.getElementById('projectsDatalist');
-    if (!dl) return;
-    dl.innerHTML = appSettings.projects.map(function (p) {
-      return '<option value="' + esc(p.name) + '">';
+    const sel = document.getElementById('f_taskName');
+    if (!sel) return;
+    const uniqueNames = [];
+    appSettings.projects.forEach(function (p) {
+      if (p.name && uniqueNames.indexOf(p.name) === -1) uniqueNames.push(p.name);
+    });
+    if (receiptData.taskName && uniqueNames.indexOf(receiptData.taskName) === -1) {
+      uniqueNames.push(receiptData.taskName);
+    }
+    sel.innerHTML = '<option value="">(선택 안 함)</option>' + uniqueNames.map(function (n) {
+      return '<option value="' + esc(n) + '"' + (receiptData.taskName === n ? ' selected' : '') + '>' + esc(n) + '</option>';
     }).join('');
   }
-  // 연구과제명 입력란: 등록된 과제명과 정확히 일치하면 과제번호를 자동으로 채운다 (수동 수정 가능)
+  // 연구과제명 드롭박스: 선택하면 과제번호가 자동으로 따라간다 (과제번호는 직접 입력하지 않음)
   function onTaskNameChange() {
     const name = document.getElementById('f_taskName').value;
     receiptData.taskName = name;
     const match = appSettings.projects.find(function (p) { return p.name === name; });
-    if (match) {
-      receiptData.taskNumber = match.number;
-      document.getElementById('f_taskNumber').value = match.number;
-    }
+    receiptData.taskNumber = match ? match.number : '';
+    document.getElementById('f_taskNumber').value = receiptData.taskNumber;
     refreshCurrentPreview();
   }
 
@@ -1862,6 +1910,27 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     container.appendChild(addBtn);
   }
 
+  // ---- 되돌릴 수 없는 동작 확인 팝업 (window.confirm() 대체) ----
+  // 일부 브라우저/환경에서 confirm()이 아무 반응 없이 즉시 취소 처리되는 경우가 있어
+  // (경고문구가 아예 안 뜨고 그냥 넘어감), 데이터 초기화처럼 되돌릴 수 없는 동작은
+  // 화면 안에서 직접 그리는 팝업으로 확인을 받는다.
+  let confirmModalOnOk = null;
+  function showConfirmModal(message, onOk, title) {
+    document.getElementById('confirmModalTitle').textContent = title || '확인';
+    document.getElementById('confirmModalMessage').textContent = message;
+    confirmModalOnOk = onOk;
+    document.getElementById('confirmModalOverlay').classList.add('open');
+  }
+  function closeConfirmModal() {
+    document.getElementById('confirmModalOverlay').classList.remove('open');
+    confirmModalOnOk = null;
+  }
+  document.getElementById('confirmModalOkBtn').onclick = function () {
+    const cb = confirmModalOnOk;
+    closeConfirmModal();
+    if (cb) cb();
+  };
+
   // ---- 도움말 팝업 (화면 상단 ❓ 도움말 버튼) ----
   function openHelpModal() {
     renderHelpModal();
@@ -2118,7 +2187,19 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     setConfirmState('form');
     document.getElementById('receiptUploadInput').click();
   }
+  // [직접 입력] 버튼: 연구과제명/과제번호는 그대로 두고(같은 과제로 여러 건 처리하는
+  // 경우가 많음) 나머지 입력값은 새로 입력할 수 있게 비워준다.
   function focusManualEntry() {
+    receiptData.date = '';
+    receiptData.vendor = '';
+    receiptData.budgetMok = '';
+    receiptData.budgetSub = '';
+    receiptData.expenseDetail = '';
+    receiptData.items = [];
+    receiptData.receiptImageDataUrl = null;
+    document.getElementById('receiptUploadInput').value = '';
+    document.getElementById('excelUploadInput').value = '';
+    currentFormKey = null;
     skipToConfirm();
     const el = document.getElementById('f_date');
     if (el) {
@@ -2302,25 +2383,29 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
 
   // ---- 새 작업 (기초자료 입력 화면의 버튼을 눌렀을 때만 데이터가 초기화됨) ----
   function confirmResetInput() {
-    if (!confirm('새 작업을 시작할까요? 지금까지 입력·업로드한 내용은 모두 사라지며 되돌릴 수 없습니다.')) return;
-    receiptData.date = '';
-    receiptData.vendor = '';
-    receiptData.taskName = '';
-    receiptData.taskNumber = '';
-    receiptData.budgetMok = '';
-    receiptData.budgetSub = '';
-    receiptData.expenseDetail = '';
-    receiptData.items = [];
-    receiptData.receiptImageDataUrl = null;
-    // 연구책임자소속/성명, 담당자/연락처 등 프로필성 항목은 3단계 개인설정 기본값에서
-    // 채워지는 필드라 여기서는 초기화하지 않습니다(현재는 UI에서 재입력할 방법이 없음).
-    document.getElementById('receiptUploadInput').value = '';
-    document.getElementById('excelUploadInput').value = '';
-    document.getElementById('receiptDropzone').classList.remove('drag-over');
-    currentFormKey = null;
-    populateConfirmForm();
-    setConfirmState('form');
-    alert('새 작업을 시작합니다.');
+    showConfirmModal(
+      '새 작업을 시작할까요? 지금까지 입력·업로드한 내용은 모두 사라지며 되돌릴 수 없습니다.',
+      function () {
+        receiptData.date = '';
+        receiptData.vendor = '';
+        receiptData.taskName = '';
+        receiptData.taskNumber = '';
+        receiptData.budgetMok = '';
+        receiptData.budgetSub = '';
+        receiptData.expenseDetail = '';
+        receiptData.items = [];
+        receiptData.receiptImageDataUrl = null;
+        // 연구책임자소속/성명, 담당자/연락처 등 프로필성 항목은 3단계 개인설정 기본값에서
+        // 채워지는 필드라 여기서는 초기화하지 않습니다(현재는 UI에서 재입력할 방법이 없음).
+        document.getElementById('receiptUploadInput').value = '';
+        document.getElementById('excelUploadInput').value = '';
+        document.getElementById('receiptDropzone').classList.remove('drag-over');
+        currentFormKey = null;
+        populateConfirmForm();
+        setConfirmState('form');
+      },
+      '새 작업 (데이터 초기화)'
+    );
   }
 
   // ※ 2단계에서는 recognizeReceipt() 결과로 receiptData를 채운 뒤 이 함수를 호출합니다.
@@ -2426,16 +2511,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   function populateConfirmForm() {
     document.getElementById('f_date').value = receiptData.date;
     document.getElementById('f_vendor').value = receiptData.vendor;
-    document.getElementById('f_taskName').value = receiptData.taskName;
     document.getElementById('f_taskNumber').value = receiptData.taskNumber;
     document.getElementById('f_expenseDetail').value = receiptData.expenseDetail || '';
+    renderProjectDropdownOptions();
     renderBudgetMokOptions();
     renderItemsEditor();
   }
   function onConfirmFieldChange() {
     receiptData.date = document.getElementById('f_date').value;
     receiptData.vendor = document.getElementById('f_vendor').value;
-    receiptData.taskNumber = document.getElementById('f_taskNumber').value;
     receiptData.expenseDetail = document.getElementById('f_expenseDetail').value;
     refreshCurrentPreview();
   }
