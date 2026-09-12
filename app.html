@@ -263,9 +263,18 @@
     flex: 1;
     gap: 16px;
   }
-  /* 서식 체크리스트 1번째 패널: 예산 항목 성격 + 협조사항(공통/카테고리별) */
-  /* 서식 체크리스트: 1분할(예산항목+서식목록) / 2분할(미리보기, 나머지 공간) / 3분할(제목+협조사항) */
+  /* 서식 체크리스트: 1분할(예산항목+서식목록) / 2분할(미리보기, 나머지 공간) / 3분할(협조사항) */
   .screen-checklist { padding-top: 24px; }
+  /* 제목(왼쪽)+설명(제목 오른쪽)을 한 줄에 — 체크리스트(1분할)와 시각적으로 붙어 보이도록 상단에 배치 */
+  .checklist-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .checklist-header h1 { margin: 0; white-space: nowrap; }
+  .checklist-header .desc { margin: 0; max-width: none; }
   .checklist-col-list {
     width: 230px;
     flex-shrink: 0;
@@ -279,8 +288,6 @@
     flex-shrink: 0;
     overflow-y: auto;
   }
-  .checklist-col-notice h1 { font-size: 18px; margin: 0 0 6px 0; }
-  .checklist-col-notice .desc { font-size: 12px; margin-bottom: 14px; max-width: none; }
   .checklist-col-list .budget-bar select,
   .checklist-col-notice .budget-bar select {
     width: 100%;
@@ -371,8 +378,9 @@
   @media (max-width: 640px) {
     .preview-split { flex-direction: column; }
     .checklist-col-list { width: auto; }
-    /* 제목/설명/협조사항 칸을 모바일에서는 맨 위로 (데스크톱은 3분할 순서 그대로 유지) */
-    .checklist-col-notice { width: auto; order: -1; }
+    .checklist-col-notice { width: auto; }
+    .checklist-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .checklist-header h1 { white-space: normal; }
     .checklist-col-list .preview-list {
       flex-direction: row;
       overflow-x: auto;
@@ -731,6 +739,10 @@
 
   <!-- 2. 서식 체크리스트 + 미리보기 (통합) -->
   <div class="screen screen-checklist" id="screen-step-checklist">
+    <div class="checklist-header">
+      <h1>서식 체크리스트</h1>
+      <p class="desc">예산 항목 성격을 선택하면 협조사항과 필요서류가 바뀝니다. 왼쪽 목록에서 서식을 클릭하면 가운데에 미리보고, 체크박스로 완료 표시하세요.</p>
+    </div>
     <div class="preview-split">
       <div class="checklist-col-list">
         <div class="budget-bar">
@@ -760,8 +772,6 @@
       </div>
 
       <div class="checklist-col-notice">
-        <h1>서식 체크리스트</h1>
-        <p class="desc">예산 항목 성격을 선택하면 협조사항과 필요서류가 바뀝니다. 왼쪽 목록에서 서식을 클릭하면 가운데에 미리보고, 체크박스로 완료 표시하세요.</p>
         <details class="notice-block">
           <summary>📌 공통 필수 확인사항</summary>
           <ul id="commonNoticeList"></ul>
