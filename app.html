@@ -1057,9 +1057,9 @@
         <!-- 예전엔 세 항목을 각각 접기/펼치기(<details>)로 뒀는데, 셋 다 펼치면
              전체 길이가 너무 길어져서 탭으로 바꿨다 — 한 번에 하나만 보인다. -->
         <div class="notice-tab-bar" id="noticeTabBar">
-          <button type="button" class="notice-tab active" data-tab="notice-common" onclick="switchNoticeTab('notice-common')">📌 공통</button>
-          <button type="button" class="notice-tab notice-tab-blue" id="noticeTabBlueBtn" data-tab="notice-blue" onclick="switchNoticeTab('notice-blue')" style="display:none;">💡 자동 안내</button>
-          <button type="button" class="notice-tab notice-tab-orange" id="noticeTabOrangeBtn" data-tab="notice-orange" onclick="switchNoticeTab('notice-orange')" style="display:none;">⚠ 주의사항</button>
+          <button type="button" class="notice-tab active" data-tab="notice-common" onclick="switchNoticeTab('notice-common')">📌 공통 규정</button>
+          <button type="button" class="notice-tab notice-tab-blue" id="noticeTabBlueBtn" data-tab="notice-blue" onclick="switchNoticeTab('notice-blue')" style="display:none;">💡 기준 안내</button>
+          <button type="button" class="notice-tab notice-tab-orange" id="noticeTabOrangeBtn" data-tab="notice-orange" onclick="switchNoticeTab('notice-orange')" style="display:none;">⚠ 제출 전 확인</button>
         </div>
         <div class="notice-panel active" id="notice-common">
           <ul id="commonNoticeList"></ul>
@@ -1079,7 +1079,6 @@
 
   <!-- 회계처리 목록 -->
   <div class="screen" id="screen-ledger">
-    <button class="link-btn" style="margin-bottom:6px; align-self:flex-start; text-align:left;" onclick="closeUtilityScreen()">← 돌아가기</button>
     <div class="checklist-header">
       <h1>회계처리 목록</h1>
       <p class="desc" title="전체 서식 인쇄를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.">전체 서식 인쇄를 완료할 때마다 한 건씩 자동으로 추가됩니다</p>
@@ -1103,13 +1102,13 @@
       </table>
     </div>
     <div class="btn-row">
+      <button class="secondary" onclick="closeUtilityScreen()">← 돌아가기</button>
       <button class="primary" onclick="downloadLedgerExcel()">⬇ 엑셀 다운로드</button>
     </div>
   </div>
 
   <!-- 개인설정 -->
   <div class="screen" id="screen-settings">
-    <button class="link-btn" style="margin-bottom:6px; align-self:flex-start; text-align:left;" onclick="closeUtilityScreen()">← 돌아가기</button>
     <div class="checklist-header">
       <h1>개인설정</h1>
       <p class="desc" title="이름, 연구과제, 예산 구분, 필요서류 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.">이름·연구과제·예산 구분·필요서류 등을 관리 (이 브라우저에만 저장)</p>
@@ -1170,15 +1169,15 @@
         </div>
         <p style="font-size:11.5px;color:#888;margin:6px 0 0;">💡 아래 세 항목은 화면에서 직접 고치지 않고, txt 파일 업로드로만 통째로 교체합니다. (⬇ 다운로드로 현재 내용을 받아 메모장/엑셀에서 한 줄에 문구 1개씩 수정한 뒤 ⬆ 업로드)</p>
         <div class="settings-subsection">
-          <h4>📌 공통 필수 확인사항 (모든 항목 공통)</h4>
+          <h4>📌 공통 규정 (모든 예산 항목 공통)</h4>
           <div id="commonNoticesEditor"></div>
         </div>
         <div class="settings-subsection">
-          <h4>💡 자동 안내 문구</h4>
+          <h4>💡 기준 안내 (금액·부수 등 알아둘 기준)</h4>
           <div id="blueNotesEditor"></div>
         </div>
         <div class="settings-subsection">
-          <h4>⚠ 주의사항 문구</h4>
+          <h4>⚠ 제출 전 확인 (서류에서 직접 확인할 항목)</h4>
           <div id="orangeNotesEditor"></div>
         </div>
         <div class="settings-subsection">
@@ -1202,6 +1201,10 @@
         <button class="secondary" onclick="document.getElementById('settingsImportInput').click()">⬆ 백업 파일 불러오기</button>
         <input type="file" id="settingsImportInput" accept=".json" style="display:none" onchange="importSettingsFile(this.files[0])">
       </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="secondary" onclick="closeUtilityScreen()">← 돌아가기</button>
     </div>
 
   </div>
@@ -1333,21 +1336,24 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
 
   const DEFAULT_CATEGORY_DOCS = {
     general: {
+      // 기준 안내: 몰라서 못 지키는 "금액·부수 기준" — 읽고 알아두면 되는 정보
       blue: [
         '견적서 작성일: 관외 결제 1주일 전, 관내 결제 당일~하루 전 (휴무일·공휴일 불가 / 마트·다이소·치료비 등은 견적서·거래명세서 제외 가능)',
         '100만원 이하(세액 포함): 본견적서 1부',
         '100만원 이상(세액 포함): 본견적서 + 타견적서 1부',
         '단일품목 단가 30만원 이상: 본견적서 + 타견적서 2부',
         '330만원 이상(세액 포함): 본+타견적서 3부, "중앙구매" 대상 (직접 결제 아닌 산학협력단 중앙구매 진행 — 최소 1개월 전 신청, 견적서·과업지시서·품목업체지정사유서·규격서 등 구비, 회계담당자 사전 상의 필수)',
-        '총 구입액 110만원 이상: "구매건 사진양식" 자동 추가 (그 외 특이사항 없음)',
-        '프로그램 사업비: 결과보고서 2주 이내 제출 (지연 시 계획서 우선 제출, 2주 내 어려우면 운영팀 상의)',
+        // "총 구입액 110만원 이상 구매건 사진양식 자동 추가"는 앱이 이미 자동으로
+        // 처리하므로(PURCHASE_PHOTO_THRESHOLD) 따로 확인할 필요가 없어 삭제했다.
       ],
+      // 제출 전 확인: 서류를 만들 때 실제로 손대서 맞는지 확인해야 하는 항목
       orange: [
         '거래명세서: 하단 [인수자 : ○○○] 기재, 기관명 "연세대학교 미래의료산학협력단" 정확히, 부가세 포함 단가·총액 기재',
         '계좌이체 거래: 세금계산서 첨부 필수 ("연세대학교 미래의료산학협력단"으로 정발행 또는 산단 역발행, 다음 달 10일 전 처리 — 이후 처리 불가)',
         '물품검수조서: 거래명세서와 동일 날짜, 검수자(본인)·입회자(염미애 상임팀장) 서명 완료 (단일품목도 엑셀 2번 검수표 동시 제출)',
         '품의서: 희망이음 시스템 등록, 결재선(담당→팀장→상임팀장→부센터장→센터장) 도장 완료 (차량비 만원 단위·치료비 천원 단위 올림, 물품내역 탭 소모품/고정자산 구분)',
         '품의서 날짜: 견적서 날짜와 동일 (견적서 불필요 건은 당일~결재일 하루 전, 치료비는 당일 작성)',
+        '프로그램 사업비: 결과보고서 2주 이내 제출 (지연 시 계획서 우선 제출, 2주 내 어려우면 운영팀 상의)',
       ],
       docs: [
         { name: '영수증 첨부양식', active: true, formKey: 'receipt' },
@@ -1378,10 +1384,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       ]
     },
     business: {
-      blue: [
-        '강사비 서류 1~4번(수당신청서/수령부/동의서/이력서 등) 동일 준비 후 아래 서류 추가',
-      ],
+      blue: [],
       orange: [
+        '강사비 서류 1~4번(수당신청서/수령부/동의서/이력서 등) 동일 준비 후 아래 서류 추가',
         '회의 목적·참석자 범위, 업무추진비 집행 지침 부합 여부 확인',
       ],
       docs: [
@@ -1396,10 +1401,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       ]
     },
     education: {
-      blue: [
-        '계좌이체 시 산단 사업자번호(566-82-00471) 현금영수증 발행, 또는 발행 불가 사유 캡처/메일 보관',
-      ],
+      blue: [],
       orange: [
+        '계좌이체 시 산단 사업자번호(566-82-00471) 현금영수증 발행, 또는 발행 불가 사유 캡처/메일 보관',
         '본인 명의 계좌 입금 이체증 여부 확인',
       ],
       docs: [
@@ -1831,19 +1835,19 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       document.getElementById('commonNoticesEditor'),
       function () { return appSettings.commonNotices; },
       function (lines) { appSettings.commonNotices = lines; },
-      '공통 필수 확인사항', '공통_필수_확인사항'
+      '공통 규정', '공통_규정'
     );
     renderStringListUploader(
       document.getElementById('blueNotesEditor'),
       function () { return cat.blue; },
       function (lines) { cat.blue = lines; },
-      '자동 안내 문구', '자동안내문구_' + key
+      '기준 안내 문구', '기준안내문구_' + key
     );
     renderStringListUploader(
       document.getElementById('orangeNotesEditor'),
       function () { return cat.orange; },
       function (lines) { cat.orange = lines; },
-      '주의사항 문구', '주의사항문구_' + key
+      '제출 전 확인 문구', '제출전확인문구_' + key
     );
     renderDocsListEditor(cat);
   }
