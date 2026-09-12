@@ -103,9 +103,36 @@
     max-height: 175mm;
     object-fit: contain;
     display: none;
+    transform-origin: center;
   }
   .attach-box img.has-image {
     display: block;
+  }
+  /* 사진 크기 조절 슬라이더 (이미지가 첨부됐을 때만 보임, 인쇄 시에는 숨김) */
+  .image-size-control {
+    max-width: 179mm;
+    margin: 3mm auto 0 auto;
+    padding: 2mm 3mm;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4mm;
+  }
+  .image-size-control input[type="range"] {
+    width: 55mm;
+    vertical-align: middle;
+  }
+  .image-size-control .image-size-reset-btn {
+    font-size: 9pt;
+    padding: 1mm 3mm;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
   }
   .image-remove-btn {
     position: absolute;
@@ -167,6 +194,9 @@
       display: none;
     }
     .image-remove-btn {
+      display: none !important;
+    }
+    .image-size-control {
       display: none !important;
     }
   }
@@ -278,6 +308,14 @@
       <button type="button" class="image-remove-btn" id="removeImageBtn">✕ 이미지 삭제(공란으로)</button>
     </div>
 
+    <div class="image-size-control" id="imageSizeControl">
+      <label>사진 크기:
+        <input type="range" id="imageSizeSlider" min="50" max="200" step="5" value="100">
+      </label>
+      <span id="imageSizeLabel">100%</span>
+      <button type="button" class="image-size-reset-btn" id="imageSizeResetBtn">초기화</button>
+    </div>
+
     <div class="status-msg small-notice hidden" id="smallSizeNotice">
       ⚠️ 사진이 작게 표시되어 알아보기 어려울 수 있습니다. 확인이 어려우면
       위 이미지를 삭제하고 영수증을 별도로 출력해서 첨부해 주세요.
@@ -296,12 +334,33 @@
     const placeholder = document.getElementById('attachPlaceholder');
     const smallSizeNotice = document.getElementById('smallSizeNotice');
     const removeBtn = document.getElementById('removeImageBtn');
+    const sizeControl = document.getElementById('imageSizeControl');
+    const sizeSlider = document.getElementById('imageSizeSlider');
+    const sizeLabel = document.getElementById('imageSizeLabel');
+    const sizeResetBtn = document.getElementById('imageSizeResetBtn');
 
     // 첨부란(박스) 내부 크기 (mm) - .attach-box 크기(185.1mm)에서 padding(5mm*2) 제외
     const BOX_INNER_WIDTH_MM = 179 - 2 * 5;
     const BOX_INNER_HEIGHT_MM = 182 - 2 * 5;
     // "그대로(contain) 넣었을 때" 박스 폭의 이 비율보다 작아지면 "많이 작게 보인다"고 안내만 함
     const SMALL_NOTICE_RATIO = 0.6;
+
+    // 사진 크기 조절: object-fit:contain으로 맞춰진 크기를 기준으로 추가 확대/축소한다.
+    // .attach-box가 overflow:hidden이라 확대해도 박스 밖으로는 넘치지 않는다.
+    function applyImageScale(percent) {
+      img.style.transform = 'scale(' + (percent / 100) + ')';
+    }
+    function resetImageScale() {
+      sizeSlider.value = 100;
+      sizeLabel.textContent = '100%';
+      applyImageScale(100);
+    }
+    sizeSlider.addEventListener('input', function () {
+      const percent = Number(sizeSlider.value);
+      sizeLabel.textContent = percent + '%';
+      applyImageScale(percent);
+    });
+    sizeResetBtn.addEventListener('click', resetImageScale);
 
     function loadImageFromFile(file) {
       return new Promise((resolve, reject) => {
@@ -323,6 +382,8 @@
       placeholder.classList.remove('hidden');
       removeBtn.classList.remove('visible');
       smallSizeNotice.classList.add('hidden');
+      sizeControl.style.display = 'none';
+      resetImageScale();
       fileInput.value = '';
     }
 
@@ -337,6 +398,8 @@
       img.classList.add('has-image');
       placeholder.classList.add('hidden');
       removeBtn.classList.add('visible');
+      sizeControl.style.display = 'flex';
+      resetImageScale();
 
       const containScale = Math.min(
         BOX_INNER_WIDTH_MM / image.naturalWidth,
@@ -379,6 +442,10 @@
       }
     }
     function handleFileFromDataUrl(dataUrl) {
+      // 다른 입력칸을 고칠 때마다 setData가 다시 전송되는데, 그때마다 같은 이미지를
+      // 다시 로드/리셋하면 사용자가 슬라이더로 조절해둔 배율이 매번 초기화돼버린다.
+      // 이미 같은 이미지가 표시 중이면 아무 것도 하지 않는다.
+      if (img.classList.contains('has-image') && img.getAttribute('src') === dataUrl) return;
       const image = new Image();
       image.onload = function () {
         const containScale = Math.min(BOX_INNER_WIDTH_MM / image.naturalWidth, BOX_INNER_HEIGHT_MM / image.naturalHeight);
@@ -387,6 +454,8 @@
         img.classList.add('has-image');
         placeholder.classList.add('hidden');
         removeBtn.classList.add('visible');
+        sizeControl.style.display = 'flex';
+        resetImageScale();
         smallSizeNotice.classList.toggle('hidden', containedWidthMM >= BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO);
       };
       image.src = dataUrl;
