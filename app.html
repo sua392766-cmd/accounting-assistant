@@ -66,6 +66,75 @@
   header .step-label {
     color: #888;
   }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  header .help-link {
+    color: #555;
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 13px;
+  }
+  /* 도움말 팝업 */
+  .help-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .help-modal-overlay.open { display: flex; }
+  .help-modal-box {
+    background: #fff;
+    border-radius: 10px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+  }
+  .help-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+  }
+  .help-modal-header h2 { font-size: 16px; margin: 0; }
+  .help-modal-close {
+    background: none; border: none; font-size: 20px; cursor: pointer; color: #888; line-height: 1;
+  }
+  .help-modal-body { padding: 8px 20px 20px; overflow-y: auto; }
+  .help-topic { border-bottom: 1px solid #eee; }
+  .help-topic:last-child { border-bottom: none; }
+  .help-topic-title {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 12px 4px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #222;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .help-topic-body {
+    display: none;
+    padding: 0 4px 14px 4px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #333;
+    white-space: pre-line;
+  }
+  .help-topic.open .help-topic-body { display: block; }
+  .help-modal-empty { color: #999; font-size: 13px; padding: 12px 4px; }
   .screen {
     display: none;
     flex: 1;
@@ -649,6 +718,21 @@
   }
   .settings-readonly-list li { margin-bottom: 4px; }
   .settings-readonly-empty { list-style: none; margin-left: -20px; color: #999; }
+  /* 5. 도움말 관리: 항목별 제목+내용 편집 카드 */
+  .help-topic-edit-row {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .help-topic-edit-title-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .help-topic-edit-title-row input {
+    flex: 1; font-size: 13.5px; font-weight: bold; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
+  }
+  .help-topic-edit-row textarea {
+    width: 100%; min-height: 80px; font-size: 13px; padding: 8px 9px; border: 1px solid #ccc;
+    border-radius: 6px; resize: vertical; font-family: inherit;
+  }
   .ai-model-row {
     display: flex; align-items: center; gap: 8px; padding: 9px 10px;
     border: 1px solid #ccc; border-radius: 6px; margin-bottom: 6px; font-size: 13.5px; cursor: pointer;
@@ -689,7 +773,10 @@
 <div class="frame">
   <header>
     <button class="home-link" onclick="goHome()">🏠 홈으로</button>
-    <span class="step-label" id="stepLabel"></span>
+    <div class="header-right">
+      <span class="step-label" id="stepLabel"></span>
+      <button class="help-link" onclick="openHelpModal()">❓ 도움말</button>
+    </div>
   </header>
 
   <!-- 홈 화면 -->
@@ -976,17 +1063,9 @@
     </div>
 
     <div class="settings-section">
-      <h3>참고: 영수증 인식이 갑자기 안 될 때</h3>
-      <div class="settings-help-box">
-        <p>Google이 가끔 특정 Gemini 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜨면 이 문제부터 의심해보세요.</p>
-        <ol>
-          <li>영수증을 업로드했는데 "인식 실패" 화면이 뜨면, 이 앱을 만들 때 쓰던 Claude 대화창에 "인식 안돼"라고 말해서 원인을 확인해달라고 하세요.</li>
-          <li>직접 확인하려면: GitHub 저장소의 <code>api/recognize.js</code> 파일에서
-            <code>generativelanguage.googleapis.com/v1beta/models/</code> 뒤에 있는 모델 이름을 확인하세요.</li>
-          <li>오류 메시지에 "is no longer available"(더 이상 사용할 수 없음)와 함께 새 모델명이 안내되면,
-            그 이름으로 이 줄만 바꾸고 GitHub에서 "Commit changes"를 누르면 자동으로 재배포됩니다.</li>
-        </ol>
-      </div>
+      <h3>5. 도움말 관리</h3>
+      <p class="desc" style="margin-bottom:10px;">화면 상단의 [❓ 도움말] 버튼을 누르면 뜨는 팝업에 표시되는 내용입니다. 제목/내용을 자유롭게 추가·수정·삭제하세요.</p>
+      <div id="helpTopicsEditor"></div>
     </div>
 
     <div class="settings-section">
@@ -1004,6 +1083,16 @@
     </div>
   </div>
 
+</div>
+
+<div class="help-modal-overlay" id="helpModalOverlay" onclick="if (event.target === this) closeHelpModal();">
+  <div class="help-modal-box">
+    <div class="help-modal-header">
+      <h2>❓ 도움말</h2>
+      <button class="help-modal-close" onclick="closeHelpModal()">✕</button>
+    </div>
+    <div class="help-modal-body" id="helpModalBody"></div>
+  </div>
 </div>
 
 <script>
@@ -1062,6 +1151,17 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     '카드 결제 시 카드 출납대장 작성 필수',
     '동일 업체 110만원 이상 결제 시, 직전 결제와 최소 한 달 간격 (소액 결제는 기간 무관)',
     '연초(과제 생성 전) 지출: 현금영수증(566-82-00471) 처리, 개인카드 사용 불가 (단, 교통비는 개인카드 가능)',
+  ];
+
+  // 도움말 팝업 초기 항목. 실무자가 개인설정 > 도움말 관리에서 자유롭게 추가/수정/삭제한다.
+  const DEFAULT_HELP_TOPICS = [
+    {
+      title: '영수증 인식이 갑자기 안 될 때',
+      body: 'Google이 가끔 특정 Gemini 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜨면 이 문제부터 의심해보세요.\n\n'
+        + '1. 영수증을 업로드했는데 "인식 실패" 화면이 뜨면, 이 앱을 만들 때 쓰던 Claude 대화창에 "인식 안돼"라고 말해서 원인을 확인해달라고 하세요.\n'
+        + '2. 직접 확인하려면: GitHub 저장소의 api/recognize.js 파일에서 generativelanguage.googleapis.com/v1beta/models/ 뒤에 있는 모델 이름을 확인하세요.\n'
+        + '3. 오류 메시지에 "is no longer available"(더 이상 사용할 수 없음)와 함께 새 모델명이 안내되면, 그 이름으로 이 줄만 바꾸고 GitHub에서 "Commit changes"를 누르면 자동으로 재배포됩니다.',
+    },
   ];
 
   const DEFAULT_CATEGORY_DOCS = {
@@ -1221,6 +1321,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       ],
       commonNotices: DEFAULT_COMMON_NOTICES.slice(),
       categoryDocs: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_DOCS)),
+      helpTopics: JSON.parse(JSON.stringify(DEFAULT_HELP_TOPICS)),
       printNotes: {
         receipt: [],
         gumsu1: ['검수자·입회자 도장은 인쇄 후 직접 날인하세요.'],
@@ -1364,6 +1465,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     renderProjectsTable();
     renderBudgetGroupsTable();
     renderDocsEditor();
+    renderHelpTopicsEditor();
   }
 
   // ---- 1. 기본 정보 ----
@@ -1695,6 +1797,101 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       renderDocsListEditor(cat);
     };
     container.appendChild(addBtn);
+  }
+
+  // ---- 5. 도움말 관리 (개인설정 화면의 CRUD 편집기) ----
+  function renderHelpTopicsEditor() {
+    const container = document.getElementById('helpTopicsEditor');
+    container.innerHTML = '';
+    if (!Array.isArray(appSettings.helpTopics)) appSettings.helpTopics = [];
+    appSettings.helpTopics.forEach(function (topic, idx) {
+      const row = document.createElement('div');
+      row.className = 'help-topic-edit-row';
+
+      const titleInput = document.createElement('input');
+      titleInput.type = 'text';
+      titleInput.placeholder = '제목';
+      titleInput.value = topic.title || '';
+      titleInput.oninput = function () { topic.title = titleInput.value; saveSettings(); };
+
+      const bodyTextarea = document.createElement('textarea');
+      bodyTextarea.placeholder = '내용 (여러 줄 입력 가능)';
+      bodyTextarea.value = topic.body || '';
+      bodyTextarea.oninput = function () { topic.body = bodyTextarea.value; saveSettings(); };
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'row-remove-btn';
+      delBtn.textContent = '✕';
+      delBtn.onclick = function () {
+        if (!confirm('이 도움말 항목을 삭제할까요?')) return;
+        appSettings.helpTopics.splice(idx, 1);
+        saveSettings();
+        renderHelpTopicsEditor();
+      };
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'help-topic-edit-title-row';
+      titleRow.appendChild(titleInput);
+      titleRow.appendChild(delBtn);
+
+      row.appendChild(titleRow);
+      row.appendChild(bodyTextarea);
+      container.appendChild(row);
+    });
+    const addBtn = document.createElement('button');
+    addBtn.className = 'link-btn';
+    addBtn.textContent = '+ 도움말 항목 추가';
+    addBtn.onclick = function () {
+      appSettings.helpTopics.push({ title: '', body: '' });
+      saveSettings();
+      renderHelpTopicsEditor();
+    };
+    container.appendChild(addBtn);
+  }
+
+  // ---- 도움말 팝업 (화면 상단 ❓ 도움말 버튼) ----
+  function openHelpModal() {
+    renderHelpModal();
+    document.getElementById('helpModalOverlay').classList.add('open');
+  }
+  function closeHelpModal() {
+    document.getElementById('helpModalOverlay').classList.remove('open');
+  }
+  function renderHelpModal() {
+    const body = document.getElementById('helpModalBody');
+    body.innerHTML = '';
+    const topics = Array.isArray(appSettings.helpTopics) ? appSettings.helpTopics : [];
+    if (!topics.length) {
+      const p = document.createElement('p');
+      p.className = 'help-modal-empty';
+      p.textContent = '등록된 도움말이 없습니다. (개인설정 > 5. 도움말 관리에서 추가할 수 있습니다)';
+      body.appendChild(p);
+      return;
+    }
+    topics.forEach(function (topic, idx) {
+      const wrap = document.createElement('div');
+      wrap.className = 'help-topic';
+      wrap.id = 'helpTopic' + idx;
+
+      const titleBtn = document.createElement('button');
+      titleBtn.className = 'help-topic-title';
+      titleBtn.textContent = '▸ ' + (topic.title || '(제목 없음)');
+      titleBtn.onclick = function () {
+        wrap.classList.toggle('open');
+        titleBtn.textContent = (wrap.classList.contains('open') ? '▾ ' : '▸ ') + (topic.title || '(제목 없음)');
+      };
+
+      const bodyDiv = document.createElement('div');
+      bodyDiv.className = 'help-topic-body';
+      bodyDiv.textContent = topic.body || '';
+
+      wrap.appendChild(titleBtn);
+      wrap.appendChild(bodyDiv);
+      body.appendChild(wrap);
+    });
+    // 첫 항목은 펼쳐서 보여준다
+    const first = document.getElementById('helpTopic0');
+    if (first) first.querySelector('.help-topic-title').click();
   }
 
   // ---- 6. 서식별 인쇄 주의사항 관리 ----
