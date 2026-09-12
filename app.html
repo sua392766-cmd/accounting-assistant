@@ -2652,6 +2652,24 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     return result;
   }
 
+  // 영수증 첨부양식 비고란: "구분1-구분2-지출내역-본인이름" 4칸 중 하나라도 값이 있으면
+  // 4칸을 전부 이어붙인다. 빈 칸은 자리 자체를 없애 조용히 건너뛰지 않고
+  // "(◯◯ 미입력)"으로 표시해, 어느 항목을 아직 안 채웠는지 바로 알아볼 수 있게 한다.
+  function buildReceiptNote() {
+    const parts = [
+      { label: '구분1', value: receiptData.budgetMok },
+      { label: '구분2', value: receiptData.budgetSub },
+      { label: '지출내역', value: receiptData.expenseDetail },
+      { label: '본인이름', value: appSettings.profile.myName },
+    ];
+    const hasAny = parts.some(function (p) { return p.value && String(p.value).trim(); });
+    if (!hasAny) return '';
+    return parts.map(function (p) {
+      const v = p.value && String(p.value).trim();
+      return v || '(' + p.label + ' 미입력)';
+    }).join('-');
+  }
+
   // ---- 서식별 iframe에 넘길 데이터 계산 ----
   function buildFormData(formKey) {
     const total = calcTotal();
@@ -2668,9 +2686,10 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         fundingOrg: receiptData.fundingOrg,
         taskNumber: receiptData.taskNumber,
         taskName: receiptData.taskName,
-        // 비고란 자동 조합: "구분1-구분2-지출내역-본인이름" (빈 항목은 건너뜀)
-        note: [receiptData.budgetMok, receiptData.budgetSub, receiptData.expenseDetail, appSettings.profile.myName]
-          .filter(function (v) { return v && String(v).trim(); }).join('-'),
+        // 비고란 자동 조합: "구분1-구분2-지출내역-본인이름".
+        // 넷 중 하나라도 값이 있으면 4칸을 그대로 이어붙이되, 빈 칸은 조용히 건너뛰지
+        // 않고 "(◯◯ 미입력)"으로 표시해 어느 항목이 비어있는지 바로 알 수 있게 한다.
+        note: buildReceiptNote(),
         contactInfo: receiptData.contactInfo,
         totalAmountFormatted: total.toLocaleString(),
         receiptCount: '1',
