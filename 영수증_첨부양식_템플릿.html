@@ -365,7 +365,13 @@
     function applyData(data) {
       document.querySelectorAll('[data-field]').forEach(el => {
         if (data[el.dataset.field] !== undefined) {
-          el.textContent = data[el.dataset.field];
+          // 비고(note)는 미입력 항목을 빨간색으로 강조하는 <span>이 섞여 있을 수 있어
+          // innerHTML로 반영하고, 그 외 필드는 그대로 textContent로 반영한다.
+          if (el.dataset.field === 'note') {
+            el.innerHTML = data[el.dataset.field];
+          } else {
+            el.textContent = data[el.dataset.field];
+          }
         }
       });
       if (data.receiptImageDataUrl) {
