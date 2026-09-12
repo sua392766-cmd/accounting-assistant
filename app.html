@@ -701,21 +701,24 @@
     margin-bottom: 6px;
     line-height: 1.4;
   }
-  /* 서식 미리보기: 실제 A4 크기 그대로 렌더링한 iframe을 이 박스 크기에 맞춰
-     transform:scale로 축소해, 스크롤 없이 서식 전체가 한눈에 보이게 한다. */
+  /* 서식 미리보기: 실제 A4 크기 그대로 렌더링한 iframe을 박스 가로폭에 맞춰
+     transform:scale로 키운다. 텍스트가 읽히는 게 우선이라 세로로 넘치면
+     스크롤을 허용한다(스크롤 자체를 없애는 것보다 가독성이 우선). */
   .preview-pane-scale-box {
-    flex: 1;
-    min-height: 420px;
+    flex: 1 1 420px;
+    /* flex item은 기본적으로 min-height:auto라 내용이 크면 줄어들지 못하고 부모를
+       같이 밀어버려 overflow가 무력화된다 — min-height:0으로 스크롤이 실제로
+       이 박스 안에서만 생기게 한다. */
+    min-height: 0;
     border: 1px solid #bbb;
     border-radius: 6px;
     background: #f2f2f2;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
   }
   iframe.preview-pane {
-    position: absolute;
-    top: 0;
-    left: 0;
+    display: block;
     border: none;
     background: #fff;
     transform-origin: top left;
@@ -976,7 +979,9 @@
           <button class="link-btn" id="downloadFormBtn" onclick="printCurrentForm()">🖨 이 서식 인쇄</button>
         </div>
         <div class="preview-pane-scale-box" id="previewPaneScaleBox">
-          <iframe class="preview-pane" id="previewPane"></iframe>
+          <div class="preview-pane-scale-inner" id="previewPaneScaleInner">
+            <iframe class="preview-pane" id="previewPane"></iframe>
+          </div>
         </div>
       </div>
 
@@ -2719,20 +2724,32 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     oldPane.replaceWith(pane);
     document.getElementById('downloadFormBtn').style.display = '';
   }
-  // 서식(A4 실제 크기)을 previewPaneScaleBox 안에 스크롤 없이 다 보이도록 축소한다.
+  // 서식(A4 실제 크기)을 미리보기 박스 가로폭에 맞춰 키운다. 텍스트가 읽혀야 의미가
+  // 있으므로 세로까지 강제로 욱여넣지 않고, 넘치면 박스에 세로 스크롤을 허용한다.
   function fitPreviewPaneScale() {
     const box = document.getElementById('previewPaneScaleBox');
+    const inner = document.getElementById('previewPaneScaleInner');
     const pane = document.getElementById('previewPane');
-    if (!box || !pane || !pane.contentDocument) return;
+    if (!box || !inner || !pane || !pane.contentDocument) return;
     const pageEl = pane.contentDocument.querySelector('.page') || pane.contentDocument.body;
     if (!pageEl) return;
     const contentWidth = pageEl.scrollWidth;
     const contentHeight = pageEl.scrollHeight;
     if (!contentWidth || !contentHeight) return;
-    const scale = Math.min(box.clientWidth / contentWidth, box.clientHeight / contentHeight, 1);
+    // box는 flex:1이라 내용이 커지면 부모까지 같이 밀려버려 overflow가 무력화된다.
+    // 뷰포트 기준으로 이 박스가 실제로 쓸 수 있는 높이를 직접 계산해 고정한다.
+    // (getBoundingClientRect().top은 이 박스 위쪽 요소들의 높이 합이라 box 자신의
+    // height 설정과 무관하게 항상 정확하다)
+    const availableHeight = window.innerHeight - box.getBoundingClientRect().top - 24;
+    box.style.height = Math.max(300, availableHeight) + 'px';
+    const scale = box.clientWidth / contentWidth;
     pane.style.width = contentWidth + 'px';
     pane.style.height = contentHeight + 'px';
     pane.style.transform = 'scale(' + scale + ')';
+    // transform은 레이아웃 박스 크기를 바꾸지 않으므로, 감싸는 inner를 스케일 후
+    // 실제 크기로 맞춰줘야 박스의 세로 스크롤 영역이 정확하게 계산된다.
+    inner.style.width = (contentWidth * scale) + 'px';
+    inner.style.height = (contentHeight * scale) + 'px';
   }
   window.addEventListener('resize', function () {
     if (currentFormKey) fitPreviewPaneScale();
