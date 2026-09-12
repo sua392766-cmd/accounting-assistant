@@ -2200,7 +2200,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     document.getElementById('excelUploadInput').value = '';
     currentFormKey = null;
     skipToConfirm();
-    const el = document.getElementById('f_date');
+    // 연구과제명부터 순서대로 확인하도록 첫 입력칸(연구과제명)에 포커스를 준다
+    const el = document.getElementById('f_taskName');
     if (el) {
       el.focus();
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
