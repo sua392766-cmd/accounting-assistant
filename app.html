@@ -434,70 +434,52 @@
     width: 100%;
     min-width: 0;
   }
-  .notice-block {
+  /* 공통 필수 확인사항 / 자동 안내 / 주의사항: 예전엔 셋 다 접기·펼치기라 모두
+     펼치면 전체 길이가 너무 길어졌다 — 탭 하나만 펼쳐 보이는 방식으로 바꿨다. */
+  .notice-tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e2e2e2;
+  }
+  .notice-tab {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 7px 4px 8px;
+    font-size: 11.5px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .notice-tab:hover { color: #555; }
+  .notice-tab.active {
+    color: #222;
+    border-bottom-color: #999;
+  }
+  .notice-tab.notice-tab-blue.active { color: #1e4d8f; border-bottom-color: #3b82f6; }
+  .notice-tab.notice-tab-orange.active { color: #9a5a10; border-bottom-color: #e08a35; }
+  .notice-panel {
+    display: none;
     font-size: 12px;
     color: #555;
     background: #fafafa;
     border: 1px solid #eee;
     border-radius: 6px;
     padding: 10px 12px;
-    margin-bottom: 10px;
   }
-  .notice-block summary {
-    margin: 0;
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-  }
-  .notice-block[open] summary {
-    margin-bottom: 6px;
-  }
-  .notice-block ul {
+  .notice-panel.active { display: block; }
+  .notice-panel ul {
     margin: 0;
     padding-left: 15px;
     line-height: 1.6;
   }
-  /* 주의사항(주황)은 기본 접혀있다가 클릭하면 펼쳐짐 */
-  .note-orange summary {
-    font-weight: bold;
-  }
-  .note-orange[open] summary {
-    margin-bottom: 6px;
-  }
-  .note-orange ul {
-    margin: 0;
-    padding-left: 15px;
-  }
-  .note-orange li + li { margin-top: 4px; }
-  /* 공통 필수 확인사항 / 자동 안내 / 주의사항: 세 항목 모두 같은 접기·펼치기 형식으로 통일.
-     접혀 있을 때는 역삼각형(▽), 펼쳐지면 정삼각형(△)으로 방향이 뒤집혀 보이도록 표시 */
-  .notice-block summary,
-  .note-orange summary,
-  .note-blue summary {
-    cursor: pointer;
-    font-weight: bold;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .notice-block summary::-webkit-details-marker,
-  .note-orange summary::-webkit-details-marker,
-  .note-blue summary::-webkit-details-marker {
-    display: none;
-  }
-  .notice-block summary::before,
-  .note-orange summary::before,
-  .note-blue summary::before {
-    content: '▼';
-    font-size: 9px;
-    flex-shrink: 0;
-  }
-  .notice-block[open] summary::before,
-  .note-orange[open] summary::before,
-  .note-blue[open] summary::before {
-    content: '▲';
-  }
+  .notice-panel li + li { margin-top: 4px; }
   .preview-list {
     display: flex;
     flex-direction: column;
@@ -913,7 +895,7 @@
     <div class="header-right">
       <span class="step-label" id="stepLabel"></span>
       <span class="header-divider" id="headerDivider"></span>
-      <button class="header-link" onclick="openSettings()">⚙ 설정</button>
+      <button class="header-link" onclick="openSettings()">⚙ 개인설정</button>
       <button class="header-link" onclick="openLedger()">📋 회계처리 목록</button>
     </div>
   </header>
@@ -1072,18 +1054,22 @@
       </div>
 
       <div class="checklist-col-notice">
-        <details class="notice-block">
-          <summary>📌 공통 필수 확인사항</summary>
+        <!-- 예전엔 세 항목을 각각 접기/펼치기(<details>)로 뒀는데, 셋 다 펼치면
+             전체 길이가 너무 길어져서 탭으로 바꿨다 — 한 번에 하나만 보인다. -->
+        <div class="notice-tab-bar" id="noticeTabBar">
+          <button type="button" class="notice-tab active" data-tab="notice-common" onclick="switchNoticeTab('notice-common')">📌 공통</button>
+          <button type="button" class="notice-tab notice-tab-blue" id="noticeTabBlueBtn" data-tab="notice-blue" onclick="switchNoticeTab('notice-blue')" style="display:none;">💡 자동 안내</button>
+          <button type="button" class="notice-tab notice-tab-orange" id="noticeTabOrangeBtn" data-tab="notice-orange" onclick="switchNoticeTab('notice-orange')" style="display:none;">⚠ 주의사항</button>
+        </div>
+        <div class="notice-panel active" id="notice-common">
           <ul id="commonNoticeList"></ul>
-        </details>
-        <details class="note note-blue" id="noteBlueDetails" style="display:none;">
-          <summary>💡 자동 안내</summary>
+        </div>
+        <div class="notice-panel note note-blue" id="notice-blue">
           <ul id="noteBlueList"></ul>
-        </details>
-        <details class="note note-orange" id="noteOrangeDetails" style="display:none;">
-          <summary>⚠ 주의사항</summary>
+        </div>
+        <div class="notice-panel note note-orange" id="notice-orange">
           <ul id="noteOrangeList"></ul>
-        </details>
+        </div>
       </div>
     </div>
     <div class="btn-row">
@@ -1093,8 +1079,11 @@
 
   <!-- 회계처리 목록 -->
   <div class="screen" id="screen-ledger">
-    <h1>회계처리 목록</h1>
-    <p class="desc">전체 서식 인쇄를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.</p>
+    <button class="link-btn" style="margin-bottom:6px; align-self:flex-start; text-align:left;" onclick="closeUtilityScreen()">← 돌아가기</button>
+    <div class="checklist-header">
+      <h1>회계처리 목록</h1>
+      <p class="desc" title="전체 서식 인쇄를 완료할 때마다 이 목록에 한 건씩 자동으로 추가됩니다.">전체 서식 인쇄를 완료할 때마다 한 건씩 자동으로 추가됩니다</p>
+    </div>
     <div class="ledger-filter-bar">
       <div class="field">
         <label>연구과제명</label>
@@ -1120,8 +1109,11 @@
 
   <!-- 개인설정 -->
   <div class="screen" id="screen-settings">
-    <h1>개인설정</h1>
-    <p class="desc">이름, 연구과제, 예산 구분, 필요서류 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.</p>
+    <button class="link-btn" style="margin-bottom:6px; align-self:flex-start; text-align:left;" onclick="closeUtilityScreen()">← 돌아가기</button>
+    <div class="checklist-header">
+      <h1>개인설정</h1>
+      <p class="desc" title="이름, 연구과제, 예산 구분, 필요서류 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.">이름·연구과제·예산 구분·필요서류 등을 관리 (이 브라우저에만 저장)</p>
+    </div>
 
     <div class="settings-section">
       <h3>1. 기본 정보</h3>
@@ -1583,28 +1575,42 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   function escHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-  // 자동 안내(파랑)도 주의사항(주황)과 같은 <details> 형식으로 표시 (접기/펼치기 가능)
+  // 공통 필수 확인사항 / 자동 안내 / 주의사항 탭 전환. 탭 버튼과 내용 패널의
+  // id는 항상 "notice-" 접두사로 짝을 맞춘다(예: notice-blue).
+  function switchNoticeTab(tabId) {
+    document.querySelectorAll('.notice-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+    document.querySelectorAll('.notice-panel').forEach(function (panel) {
+      panel.classList.toggle('active', panel.id === tabId);
+    });
+  }
   function renderBlueNote(items) {
-    const wrap = document.getElementById('noteBlueDetails');
+    const tabBtn = document.getElementById('noticeTabBlueBtn');
+    const panel = document.getElementById('notice-blue');
     const list = document.getElementById('noteBlueList');
     if (items && items.length) {
       list.innerHTML = items.map(t => '<li>' + escHtml(t) + '</li>').join('');
-      wrap.style.display = '';
+      tabBtn.style.display = '';
     } else {
       list.innerHTML = '';
-      wrap.style.display = 'none';
+      tabBtn.style.display = 'none';
+      // 지금 보고 있던 탭인데 내용이 없어졌다면(예산 항목을 바꿔서) 공통 탭으로 돌아간다
+      if (panel.classList.contains('active')) switchNoticeTab('notice-common');
     }
   }
-  // 주의사항(주황)은 항목이 늘어나 화면을 많이 차지하므로 기본 접힌 <details>로 표시
+  // 주의사항(주황)은 항목이 늘어나 화면을 많이 차지하므로 기본은 숨겨진 탭으로 시작
   function renderOrangeNote(items) {
-    const wrap = document.getElementById('noteOrangeDetails');
+    const tabBtn = document.getElementById('noticeTabOrangeBtn');
+    const panel = document.getElementById('notice-orange');
     const list = document.getElementById('noteOrangeList');
     if (items && items.length) {
       list.innerHTML = items.map(t => '<li>' + escHtml(t) + '</li>').join('');
-      wrap.style.display = '';
+      tabBtn.style.display = '';
     } else {
       list.innerHTML = '';
-      wrap.style.display = 'none';
+      tabBtn.style.display = 'none';
+      if (panel.classList.contains('active')) switchNoticeTab('notice-common');
     }
   }
   function renderCommonNotice() {
@@ -2318,6 +2324,12 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       currentStepIndex--;
       showScreen(STEPS[currentStepIndex]);
     }
+  }
+
+  // 개인설정·회계처리 목록은 어느 단계에서 열었든, 열기 전 단계로 그대로 돌아간다
+  // (헤더의 홈으로 버튼을 없앤 뒤로는 이게 유일한 탈출구라 반드시 있어야 한다).
+  function closeUtilityScreen() {
+    showScreen(STEPS[currentStepIndex]);
   }
 
   // ============================================================
