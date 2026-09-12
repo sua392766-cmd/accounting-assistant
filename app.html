@@ -292,7 +292,6 @@
   }
   /* 새 작업: 텍스트 링크가 아니라 눌러야 할 버튼임을 명확히 보이도록 테두리 박스로 표시 */
   .btn-row .danger-box {
-    margin-left: auto;
     align-self: center;
     color: #c33;
     border: 1px solid #e0a0a0;
@@ -904,7 +903,6 @@
             <div class="editor-actions">
               <div class="editor-actions-left">
                 <button class="link-btn" onclick="addItemRow()">+ 품목 추가</button>
-                <button class="link-btn" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
               </div>
               <span class="total-display">합계금액: <b id="totalDisplay">0원</b></span>
             </div>
@@ -932,6 +930,7 @@
 
     <div class="btn-row">
       <button class="danger-box" onclick="confirmResetInput()">↺ 새 작업 (데이터 초기화)</button>
+      <button class="secondary" onclick="downloadPurchaseItemsList()">⬇ 품의서 물품구매목록 다운로드</button>
       <button class="primary" id="inputNextBtn" onclick="goNext()">다음</button>
     </div>
     <div class="dots" id="dots1"></div>
