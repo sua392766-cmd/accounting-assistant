@@ -918,8 +918,8 @@
       <span class="step-label" id="stepLabel"></span>
       <span class="header-divider" id="headerDivider"></span>
       <div class="header-tabs" id="headerTabs">
-        <button type="button" class="header-tab" data-section="main" onclick="showMainFlow()">🧾 영수증 작성</button>
         <button type="button" class="header-tab" data-section="settings" onclick="openSettings()">⚙ 개인설정</button>
+        <button type="button" class="header-tab" data-section="main" onclick="showMainFlow()">🧾 문서 만들기</button>
         <button type="button" class="header-tab" data-section="ledger" onclick="openLedger()">📋 처리 완료 목록</button>
       </div>
     </div>
@@ -1312,7 +1312,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       label.textContent = '';
     }
 
-    // 우상단 바인더 탭 3칸(영수증 작성/개인설정/회계처리 목록)은 항상 같은 자리·
+    // 우상단 바인더 탭 3칸(개인설정/문서 만들기/처리 완료 목록)은 항상 같은 자리·
     // 같은 동작이고, 지금 보고 있는 화면에 해당하는 탭에만 밑줄 표시만 한다.
     const section = (stepIdx >= 0) ? 'main' : id; // id는 'settings' | 'ledger'
     document.querySelectorAll('.header-tab').forEach(function (tab) {
@@ -2361,8 +2361,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     }
   }
 
-  // 개인설정·회계처리 목록은 어느 단계에서 열었든, 열기 전 단계로 그대로 돌아간다.
-  // 우상단 "🧾 영수증 작성" 탭과 개인설정 화면 맨 아래 돌아가기 버튼이 공통으로 쓴다.
+  // 개인설정·처리 완료 목록은 어느 단계에서 열었든, 열기 전 단계로 그대로 돌아간다.
+  // 우상단 "🧾 문서 만들기" 탭과 개인설정 화면 맨 아래 돌아가기 버튼이 공통으로 쓴다.
   function showMainFlow() {
     showScreen(STEPS[currentStepIndex]);
   }
