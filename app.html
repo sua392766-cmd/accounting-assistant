@@ -1241,6 +1241,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // ------------------------------------------------------------------
 
   // 예산 항목 성격에 상관없이 항상 지켜야 하는 공통 사항 (체크리스트 4번)
+  // 총 구입액이 이 금액(원) 이상이면 "구매건 사진양식"이 자동으로 활성화된다.
+  const PURCHASE_PHOTO_THRESHOLD = 1100000;
+
   const DEFAULT_COMMON_NOTICES = [
     '비고란: "목-세부사업명-내용-담당자이름" 형식 준수 (예: 수용비-센터운용물품비-A4용지 구입-담당자이름)',
     '3·6·9·12월 마지막 주 카드 사용 시, 해당 주 내 영수증 제출 필수',
@@ -2173,9 +2176,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     listEl.innerHTML = '';
     let firstActiveRow = null;
 
+    const total = calcTotal();
     cat.docs.forEach(doc => {
+      // 구매건 사진양식은 개인설정의 "활성" 체크박스가 아니라, 총 구입액이
+      // 110만원 이상인지로 자동 판단한다 (실제 회계 규정 기준).
+      const isPurchasePhotoRule = doc.formKey === 'purchasePhoto';
+      const isActive = isPurchasePhotoRule ? (total >= PURCHASE_PHOTO_THRESHOLD) : doc.active;
+
       const row = document.createElement('div');
-      row.className = 'doc-row' + (doc.active ? ' active' : ' inactive');
+      row.className = 'doc-row' + (isActive ? ' active' : ' inactive');
       row.dataset.form = doc.name;
       if (doc.formKey) row.dataset.formkey = doc.formKey;
 
@@ -2184,8 +2193,14 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       row.appendChild(checkbox);
 
       const span = document.createElement('span');
-      span.textContent = doc.active ? doc.name : (isNotBuildableInApp(doc.name) ? doc.name : doc.name + ' (준비중)');
-      if (doc.active) {
+      if (isActive) {
+        span.textContent = doc.name;
+      } else if (isPurchasePhotoRule) {
+        span.textContent = doc.name + ' (110만원 미만 - 해당없음)';
+      } else {
+        span.textContent = isNotBuildableInApp(doc.name) ? doc.name : doc.name + ' (준비중)';
+      }
+      if (isActive) {
         span.onclick = function () { selectDoc(span); };
         if (!firstActiveRow) firstActiveRow = row;
       }
