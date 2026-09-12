@@ -2815,6 +2815,34 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // CSS(표 칸선, 화면 전용 요소 숨김 등)가 실제 브라우저 렌더링 그대로 살아있어 훨씬
   // 안전하다 — 대신 파일이 자동으로 떨어지지 않고, 인쇄 대화상자에서 "PDF로 저장"을
   // 사용자가 직접 선택해야 한다("이 서식 인쇄"와 동일한 방식).
+  // 서식 안에는 화면에서만 보이고 인쇄 시엔 @media print로 숨기는 요소들이 있다
+  // (툴바, 업로드 버튼, 안내문구 등). 개별 "이 서식 인쇄"는 최상위 문서를 직접
+  // 인쇄하는 거라 브라우저가 이 규칙을 항상 정확히 적용하지만, 여러 서식을 중첩
+  // iframe으로 이어붙여 인쇄할 때는 프린터(가상 PDF 프린터 등)에 따라 중첩된
+  // iframe 안에서는 이 규칙이 제대로 적용되지 않는 경우가 있다. 그러면 화면에서만
+  // 보여야 할 요소가 인쇄물에도 남고, 우리가 계산한 높이(숨겨진 상태 기준)보다
+  // 실제 내용이 더 커져 스크롤이 생기고 그 스크롤바까지 찍혀버린다. 그래서 각
+  // 서식을 iframe에 로드한 직후, @media print 규칙을 미디어 조건 없이 그대로
+  // 한 번 더 적용해 "화면에서도 인쇄 결과와 똑같은 모습"으로 만들어 버린다 —
+  // 그러면 측정한 높이와 실제 인쇄되는 내용이 항상 정확히 일치한다.
+  function forceApplyPrintOnlyStyles(doc) {
+    const printCssText = [];
+    Array.from(doc.styleSheets).forEach(function (sheet) {
+      let rules;
+      try { rules = sheet.cssRules; } catch (e) { return; }
+      if (!rules) return;
+      Array.from(rules).forEach(function (rule) {
+        if (rule.media && /print/i.test(rule.media.mediaText)) {
+          Array.from(rule.cssRules).forEach(function (r) { printCssText.push(r.cssText); });
+        }
+      });
+    });
+    if (!printCssText.length) return;
+    const styleEl = doc.createElement('style');
+    styleEl.textContent = printCssText.join('\n');
+    doc.head.appendChild(styleEl);
+  }
+
   function downloadAllForms() {
     const keys = getActiveFormKeysInOrder();
     if (!keys.length) {
@@ -2838,8 +2866,8 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     outerDoc.open();
     outerDoc.write(
       '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-      'html,body{margin:0;padding:0;}' +
-      'iframe{display:block;width:100%;border:none;page-break-after:always;}' +
+      'html,body{margin:0;padding:0;overflow:hidden;}' +
+      'iframe{display:block;width:100%;border:none;overflow:hidden;page-break-after:always;}' +
       'iframe:last-child{page-break-after:auto;}' +
       '</style></head><body></body></html>'
     );
@@ -2848,18 +2876,26 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     let loadedCount = 0;
     keys.forEach(function (key) {
       const innerFrame = outerDoc.createElement('iframe');
+      innerFrame.setAttribute('scrolling', 'no');
       outerDoc.body.appendChild(innerFrame);
       innerFrame.onload = function () {
+        // iframe 안에 스크롤이 생기면(폭 재계산 시점 오차 등으로 내용이 프레임보다
+        // 살짝만 넘쳐도) 그 스크롤바 자체가 인쇄물에 그대로 찍히는 프린터가 있어
+        // (Hancom PDF 가상 프린터 등) 반드시 스크롤이 생기지 않도록 막는다.
+        innerFrame.contentDocument.documentElement.style.overflow = 'hidden';
+        forceApplyPrintOnlyStyles(innerFrame.contentDocument);
         innerFrame.contentWindow.postMessage({ type: 'setData', payload: buildFormData(key) }, '*');
         setTimeout(function () {
           const pageEl = innerFrame.contentDocument.querySelector('.page') || innerFrame.contentDocument.body;
-          // iframe 높이를 실제 내용 높이 그대로 지정한다. 서식이 A4 한 장을 넘으면(품목이
-          // 많은 물품검수조서 등) 브라우저 인쇄 엔진이 이 iframe의 콘텐츠를 실제 필요한
-          // 만큼 여러 physical page에 자연스럽게 이어서 찍어준다. (예전엔 이 높이를 A4
-          // 배수로 올림 처리했는데, 297mm를 살짝만 넘어도 594mm로 뛰어버려 안 쓰는 페이지가
-          // 통째로 하나 더 끼어드는 문제가 있었다 — 다음 서식이 새 페이지에서 시작하는 건
-          // 아래 outerDoc의 page-break-after:always만으로 이미 보장된다.)
-          innerFrame.style.height = pageEl.scrollHeight + 'px';
+          // iframe 높이를 실제 내용 높이보다 2px 여유 있게 지정한다. 서식이 A4 한 장을
+          // 넘으면(품목이 많은 물품검수조서 등) 브라우저 인쇄 엔진이 이 iframe의 콘텐츠를
+          // 실제 필요한 만큼 여러 physical page에 자연스럽게 이어서 찍어준다. (예전엔 이
+          // 높이를 A4 배수로 올림 처리했는데, 297mm를 살짝만 넘어도 594mm로 뛰어버려 안
+          // 쓰는 페이지가 통째로 하나 더 끼어드는 문제가 있었다 — 다음 서식이 새 페이지에서
+          // 시작하는 건 아래 outerDoc의 page-break-after:always만으로 이미 보장된다. 2px
+          // 여유는 측정 시점과 실제 인쇄 렌더링 사이의 미세한 오차로 스크롤이 생겨 그
+          // 스크롤바까지 인쇄되는 것을 막기 위함이다.)
+          innerFrame.style.height = (pageEl.scrollHeight + 2) + 'px';
           loadedCount++;
           if (loadedCount === keys.length) {
             setTimeout(function () {
