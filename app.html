@@ -1756,23 +1756,10 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       activeLabel.appendChild(activeCheckbox);
       activeLabel.appendChild(document.createTextNode(' 활성'));
 
-      const formSelect = document.createElement('select');
-      const noneOpt = document.createElement('option');
-      noneOpt.value = '';
-      noneOpt.textContent = '(연결 서식 없음)';
-      formSelect.appendChild(noneOpt);
-      Object.keys(FORM_TITLES).forEach(function (fk) {
-        const o = document.createElement('option');
-        o.value = fk;
-        o.textContent = FORM_TITLES[fk];
-        if (doc.formKey === fk) o.selected = true;
-        formSelect.appendChild(o);
-      });
-      formSelect.onchange = function () {
-        doc.formKey = formSelect.value || undefined;
-        saveSettings();
-      };
-
+      // "연결서식"은 화면에서 고르는 항목이 아니라, 이미 만들어진 5개 서식에 한해
+      // 앱이 내부적으로 고정 연결해두는 값이다(doc.formKey). 사용자가 잘못 바꾸면
+      // 체크리스트 화면에서 서류를 클릭했을 때 미리보기가 비어버릴 수 있어 여기서는
+      // 편집 UI를 두지 않는다. (신규로 만든 서류는 자동으로 "연결 서식 없음" 상태)
       const delBtn = document.createElement('button');
       delBtn.className = 'row-remove-btn';
       delBtn.textContent = '✕';
@@ -1784,7 +1771,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
 
       row.appendChild(nameInput);
       row.appendChild(activeLabel);
-      row.appendChild(formSelect);
       row.appendChild(delBtn);
       container.appendChild(row);
     });
