@@ -106,18 +106,22 @@
     transform-origin: center;
   }
   .attach-box img.has-image {
+    /* display:block인 요소는 부모의 text-align:center가 적용되지 않아 왼쪽으로
+       치우쳐 보이므로, margin:0 auto로 가로 중앙 정렬을 명시한다. */
     display: block;
+    margin: 0 auto;
   }
-  /* 사진 크기 조절 슬라이더 (이미지가 첨부됐을 때만 보임, 인쇄 시에는 숨김) */
+  /* 사진 크기·분할 조절 컨트롤 (첨부란 위쪽, 이미지가 첨부됐을 때만 보임, 인쇄 시 숨김) */
   .image-size-control {
     max-width: 179mm;
-    margin: 3mm auto 0 auto;
+    margin: 0 auto 3mm auto;
     padding: 2mm 3mm;
     background: #f5f5f5;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 9.5pt;
     display: none;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 4mm;
@@ -133,6 +137,17 @@
     background: #fff;
     border-radius: 4px;
     cursor: pointer;
+  }
+  .image-split-group {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    padding-left: 4mm;
+    border-left: 1px solid #ccc;
+  }
+  .image-split-group select {
+    font-size: 9pt;
+    padding: 0.5mm 1mm;
   }
   .image-remove-btn {
     position: absolute;
@@ -294,6 +309,21 @@
     </table>
 
     <div class="attach-title">영수증 첨부란</div>
+    <div class="image-size-control" id="imageSizeControl">
+      <label>사진 크기:
+        <input type="range" id="imageSizeSlider" min="50" max="200" step="5" value="100">
+      </label>
+      <span id="imageSizeLabel">100%</span>
+      <button type="button" class="image-size-reset-btn" id="imageSizeResetBtn">초기화</button>
+      <span class="image-split-group">
+        <label><input type="checkbox" id="imageSplitToggle"> 영수증이 길면 분할 표시</label>
+        <select id="imageSplitCount">
+          <option value="2">2단</option>
+          <option value="3">3단</option>
+          <option value="4">4단</option>
+        </select>
+      </span>
+    </div>
     <div class="attach-box" id="attachBox">
       <div class="attach-box-inner">
         <div class="attach-placeholder" id="attachPlaceholder">
@@ -306,14 +336,6 @@
         <img id="receiptImage" alt="영수증 이미지">
       </div>
       <button type="button" class="image-remove-btn" id="removeImageBtn">✕ 이미지 삭제(공란으로)</button>
-    </div>
-
-    <div class="image-size-control" id="imageSizeControl">
-      <label>사진 크기:
-        <input type="range" id="imageSizeSlider" min="50" max="200" step="5" value="100">
-      </label>
-      <span id="imageSizeLabel">100%</span>
-      <button type="button" class="image-size-reset-btn" id="imageSizeResetBtn">초기화</button>
     </div>
 
     <div class="status-msg small-notice hidden" id="smallSizeNotice">
@@ -338,12 +360,19 @@
     const sizeSlider = document.getElementById('imageSizeSlider');
     const sizeLabel = document.getElementById('imageSizeLabel');
     const sizeResetBtn = document.getElementById('imageSizeResetBtn');
+    const splitToggle = document.getElementById('imageSplitToggle');
+    const splitCountSelect = document.getElementById('imageSplitCount');
 
     // 첨부란(박스) 내부 크기 (mm) - .attach-box 크기(185.1mm)에서 padding(5mm*2) 제외
     const BOX_INNER_WIDTH_MM = 179 - 2 * 5;
     const BOX_INNER_HEIGHT_MM = 182 - 2 * 5;
     // "그대로(contain) 넣었을 때" 박스 폭의 이 비율보다 작아지면 "많이 작게 보인다"고 안내만 함
     const SMALL_NOTICE_RATIO = 0.6;
+    // 세로/가로 비율이 이보다 크면(영수증이 길게 늘어져 있으면) 분할 표시를 기본으로 제안한다
+    const LONG_RECEIPT_RATIO = 2.2;
+
+    // 분할 전 원본 이미지(항상 이 값을 기준으로 분할/복원한다)
+    let originalImageDataUrl = null;
 
     // 사진 크기 조절: object-fit:contain으로 맞춰진 크기를 기준으로 추가 확대/축소한다.
     // .attach-box가 overflow:hidden이라 확대해도 박스 밖으로는 넘치지 않는다.
@@ -362,6 +391,48 @@
     });
     sizeResetBtn.addEventListener('click', resetImageScale);
 
+    // 세로로 긴 영수증을 N등분해 가로로 나란히 이어붙인 이미지를 만든다.
+    // (전체 종횡비가 넓적해져서 첨부란 안에서 더 크게, 읽기 쉽게 보인다)
+    function splitImageIntoColumns(dataUrl, cols) {
+      return new Promise(function (resolve) {
+        const image = new Image();
+        image.onload = function () {
+          const w = image.naturalWidth;
+          const h = image.naturalHeight;
+          const sliceHeight = Math.ceil(h / cols);
+          const canvas = document.createElement('canvas');
+          canvas.width = w * cols;
+          canvas.height = sliceHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          for (let i = 0; i < cols; i++) {
+            const sy = i * sliceHeight;
+            const sh = Math.min(sliceHeight, h - sy);
+            if (sh <= 0) continue;
+            ctx.drawImage(image, 0, sy, w, sh, i * w, 0, w, sh);
+          }
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.src = dataUrl;
+      });
+    }
+    // 분할 체크박스/단수 선택 상태에 맞춰 img.src를 원본 또는 분할 조합 이미지로 바꾼다
+    async function applySplitState() {
+      if (!originalImageDataUrl) return;
+      if (splitToggle.checked) {
+        const cols = Number(splitCountSelect.value) || 2;
+        img.src = await splitImageIntoColumns(originalImageDataUrl, cols);
+        smallSizeNotice.classList.add('hidden'); // 분할하면 대체로 커지므로 작게 보임 경고는 끔
+      } else {
+        img.src = originalImageDataUrl;
+      }
+    }
+    splitToggle.addEventListener('change', applySplitState);
+    splitCountSelect.addEventListener('change', function () {
+      if (splitToggle.checked) applySplitState();
+    });
+
     function loadImageFromFile(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -379,10 +450,13 @@
     function clearImage() {
       img.removeAttribute('src');
       img.classList.remove('has-image');
+      img.style.transform = '';
       placeholder.classList.remove('hidden');
       removeBtn.classList.remove('visible');
       smallSizeNotice.classList.add('hidden');
       sizeControl.style.display = 'none';
+      originalImageDataUrl = null;
+      splitToggle.checked = false;
       resetImageScale();
       fileInput.value = '';
     }
@@ -391,15 +465,20 @@
       if (!file) return;
 
       const { dataUrl, image } = await loadImageFromFile(file);
+      originalImageDataUrl = dataUrl;
 
       // 이미지가 아무리 크거나 길어도 항상 첨부란 안에 축소해서 표시한다
       // (자동으로 공란 처리하지 않음 — 삭제는 사용자가 직접 판단해서 버튼으로)
-      img.src = dataUrl;
       img.classList.add('has-image');
       placeholder.classList.add('hidden');
       removeBtn.classList.add('visible');
       sizeControl.style.display = 'flex';
       resetImageScale();
+
+      // 세로로 많이 긴 영수증은 분할 표시를 기본으로 켜서 제안한다
+      splitCountSelect.value = '2';
+      splitToggle.checked = (image.naturalHeight / image.naturalWidth) > LONG_RECEIPT_RATIO;
+      await applySplitState();
 
       const containScale = Math.min(
         BOX_INNER_WIDTH_MM / image.naturalWidth,
@@ -407,7 +486,7 @@
       );
       const containedWidthMM = image.naturalWidth * containScale;
 
-      if (containedWidthMM < BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO) {
+      if (!splitToggle.checked && containedWidthMM < BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO) {
         smallSizeNotice.classList.remove('hidden');
       } else {
         smallSizeNotice.classList.add('hidden');
@@ -439,26 +518,36 @@
       });
       if (data.receiptImageDataUrl) {
         handleFileFromDataUrl(data.receiptImageDataUrl);
+      } else if (img.classList.contains('has-image')) {
+        // 이미지가 있었는데 이번엔 안 왔다 = 원본 쪽(기초자료 화면)에서 새 작업/직접
+        // 입력 등으로 초기화됐다는 뜻이므로, 여기 미리보기도 같이 공란으로 되돌린다.
+        clearImage();
       }
     }
-    function handleFileFromDataUrl(dataUrl) {
+    async function handleFileFromDataUrl(dataUrl) {
       // 다른 입력칸을 고칠 때마다 setData가 다시 전송되는데, 그때마다 같은 이미지를
-      // 다시 로드/리셋하면 사용자가 슬라이더로 조절해둔 배율이 매번 초기화돼버린다.
-      // 이미 같은 이미지가 표시 중이면 아무 것도 하지 않는다.
-      if (img.classList.contains('has-image') && img.getAttribute('src') === dataUrl) return;
-      const image = new Image();
-      image.onload = function () {
-        const containScale = Math.min(BOX_INNER_WIDTH_MM / image.naturalWidth, BOX_INNER_HEIGHT_MM / image.naturalHeight);
-        const containedWidthMM = image.naturalWidth * containScale;
-        img.src = dataUrl;
-        img.classList.add('has-image');
-        placeholder.classList.add('hidden');
-        removeBtn.classList.add('visible');
-        sizeControl.style.display = 'flex';
-        resetImageScale();
-        smallSizeNotice.classList.toggle('hidden', containedWidthMM >= BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO);
-      };
-      image.src = dataUrl;
+      // 다시 로드/리셋하면 사용자가 슬라이더로 조절해둔 배율/분할 상태가 매번
+      // 초기화돼버린다. 원본이 같으면(=진짜 새 이미지가 아니면) 아무 것도 하지 않는다.
+      if (originalImageDataUrl === dataUrl) return;
+      const image = await new Promise(function (resolve) {
+        const im = new Image();
+        im.onload = function () { resolve(im); };
+        im.src = dataUrl;
+      });
+      originalImageDataUrl = dataUrl;
+      img.classList.add('has-image');
+      placeholder.classList.add('hidden');
+      removeBtn.classList.add('visible');
+      sizeControl.style.display = 'flex';
+      resetImageScale();
+
+      splitCountSelect.value = '2';
+      splitToggle.checked = (image.naturalHeight / image.naturalWidth) > LONG_RECEIPT_RATIO;
+      await applySplitState();
+
+      const containScale = Math.min(BOX_INNER_WIDTH_MM / image.naturalWidth, BOX_INNER_HEIGHT_MM / image.naturalHeight);
+      const containedWidthMM = image.naturalWidth * containScale;
+      smallSizeNotice.classList.toggle('hidden', splitToggle.checked || containedWidthMM >= BOX_INNER_WIDTH_MM * SMALL_NOTICE_RATIO);
     }
     window.addEventListener('message', function (e) {
       if (e.data && e.data.type === 'setData') applyData(e.data.payload);
