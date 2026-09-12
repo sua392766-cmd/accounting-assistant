@@ -1082,17 +1082,19 @@
         <!-- 예전엔 세 항목을 각각 접기/펼치기(<details>)로 뒀는데, 셋 다 펼치면
              전체 길이가 너무 길어져서 탭으로 바꿨다 — 한 번에 하나만 보인다. -->
         <div class="notice-tab-bar" id="noticeTabBar">
-          <button type="button" class="notice-tab active" data-tab="notice-common" onclick="switchNoticeTab('notice-common')">📌 공통 규정</button>
+          <button type="button" class="notice-tab" data-tab="notice-common" onclick="switchNoticeTab('notice-common')">📌 공통 규정</button>
           <button type="button" class="notice-tab notice-tab-blue" id="noticeTabBlueBtn" data-tab="notice-blue" onclick="switchNoticeTab('notice-blue')" style="display:none;">💡 기준 안내</button>
-          <button type="button" class="notice-tab notice-tab-orange" id="noticeTabOrangeBtn" data-tab="notice-orange" onclick="switchNoticeTab('notice-orange')" style="display:none;">⚠ 제출 전 확인</button>
+          <button type="button" class="notice-tab notice-tab-orange active" id="noticeTabOrangeBtn" data-tab="notice-orange" onclick="switchNoticeTab('notice-orange')" style="display:none;">⚠ 제출 전 확인</button>
         </div>
-        <div class="notice-panel active" id="notice-common">
+        <div class="notice-panel" id="notice-common">
           <ul id="commonNoticeList"></ul>
         </div>
         <div class="notice-panel note note-blue" id="notice-blue">
           <ul id="noteBlueList"></ul>
         </div>
-        <div class="notice-panel note note-orange" id="notice-orange">
+        <!-- 서식 체크리스트에서 실제로 자주 쓰는 건 "지금 이 서류가 맞게 됐는지"
+             확인하는 항목이라, 세 탭 중 이 탭을 기본으로 펼쳐서 보여준다. -->
+        <div class="notice-panel note note-orange active" id="notice-orange">
           <ul id="noteOrangeList"></ul>
         </div>
       </div>
@@ -1630,14 +1632,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     } else {
       list.innerHTML = '';
       tabBtn.style.display = 'none';
-      // 지금 보고 있던 탭인데 내용이 없어졌다면(예산 항목을 바꿔서) 공통 탭으로 돌아간다
-      if (panel.classList.contains('active')) switchNoticeTab('notice-common');
+      // 지금 보고 있던 탭인데 내용이 없어졌다면(예산 항목을 바꿔서) 기본 탭(제출
+      // 전 확인)으로 돌아간다 — 모든 예산 항목에 제출 전 확인 항목이 있어 안전하다
+      if (panel.classList.contains('active')) switchNoticeTab('notice-orange');
     }
   }
-  // 주의사항(주황)은 항목이 늘어나 화면을 많이 차지하므로 기본은 숨겨진 탭으로 시작
+  // 제출 전 확인(주황)은 실제로 서류를 만들 때 가장 자주 확인하는 내용이라 기본으로
+  // 펼쳐서 보여준다. 예산 항목마다 이 목록은 항상 1개 이상 있다.
   function renderOrangeNote(items) {
     const tabBtn = document.getElementById('noticeTabOrangeBtn');
-    const panel = document.getElementById('notice-orange');
     const list = document.getElementById('noteOrangeList');
     if (items && items.length) {
       list.innerHTML = items.map(t => '<li>' + escHtml(t) + '</li>').join('');
@@ -1645,7 +1648,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     } else {
       list.innerHTML = '';
       tabBtn.style.display = 'none';
-      if (panel.classList.contains('active')) switchNoticeTab('notice-common');
     }
   }
   function renderCommonNotice() {
