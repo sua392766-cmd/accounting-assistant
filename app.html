@@ -872,7 +872,7 @@
   <!-- 개인설정 -->
   <div class="screen" id="screen-settings">
     <h1>개인설정</h1>
-    <p class="desc">이름, AI 모델, 연구과제명, 예산구분, 필요서류·인쇄주의사항 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.</p>
+    <p class="desc">이름, 연구과제, 예산 구분, 필요서류 등을 관리합니다. 이 브라우저에만 저장되며 다른 컴퓨터와는 공유되지 않습니다.</p>
 
     <div class="settings-section">
       <h3>1. 기본 정보</h3>
@@ -885,10 +885,72 @@
     </div>
 
     <div class="settings-section">
-      <h3>2. AI 모델 선택</h3>
-      <div id="aiModelOptions"></div>
+      <h3>2. 연구과제</h3>
+      <table class="settings-table">
+        <thead><tr><th>연구과제</th><th>과제번호(SAP)</th><th></th></tr></thead>
+        <tbody id="projectsTableBody"></tbody>
+      </table>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="link-btn" onclick="addProject()">+ 과제 추가</button>
+        <button class="link-btn" onclick="downloadProjectsCsv()">⬇ CSV 다운로드</button>
+        <button class="link-btn" onclick="document.getElementById('projectsImportInput').click()">⬆ CSV 업로드</button>
+        <input type="file" id="projectsImportInput" accept=".csv" style="display:none" onchange="importProjectsCsv(this.files[0])">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>3. 예산 구분 (구분1 - 구분2)</h3>
+      <table class="settings-table">
+        <thead><tr><th>구분1</th><th>구분2</th><th></th></tr></thead>
+        <tbody id="budgetGroupsTableBody"></tbody>
+      </table>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="link-btn" onclick="addBudgetGroup()">+ 줄 추가</button>
+        <button class="link-btn" onclick="downloadBudgetGroupsCsv()">⬇ CSV 다운로드</button>
+        <button class="link-btn" onclick="document.getElementById('budgetGroupsImportInput').click()">⬆ CSV 업로드</button>
+        <input type="file" id="budgetGroupsImportInput" accept=".csv" style="display:none" onchange="importBudgetGroupsCsv(this.files[0])">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>4. 필요서류 마스터 데이터 관리</h3>
+      <details>
+        <summary>펼쳐서 보기 / 수정하기</summary>
+        <div class="budget-bar">
+          <label for="docsEditCategory">예산 항목 성격 선택</label>
+          <select id="docsEditCategory" onchange="renderDocsEditor()">
+            <option value="general">일반구매(물품)</option>
+            <option value="lecture">강사비</option>
+            <option value="business">업무추진비</option>
+            <option value="education">교육참가비</option>
+            <option value="meal">식사·도시락·다과비</option>
+            <option value="travel">여비</option>
+            <option value="fuel">주유비</option>
+            <option value="utility">공공요금·우편발송</option>
+          </select>
+        </div>
+        <div class="settings-subsection">
+          <h4>📌 공통 필수 확인사항 (모든 항목 공통)</h4>
+          <div id="commonNoticesEditor"></div>
+        </div>
+        <div class="settings-subsection">
+          <h4>💡 자동 안내 문구</h4>
+          <div id="blueNotesEditor"></div>
+        </div>
+        <div class="settings-subsection">
+          <h4>⚠ 주의사항 문구</h4>
+          <div id="orangeNotesEditor"></div>
+        </div>
+        <div class="settings-subsection">
+          <h4>필요서류 목록</h4>
+          <div id="docsListEditor"></div>
+        </div>
+      </details>
+    </div>
+
+    <div class="settings-section">
+      <h3>참고: 영수증 인식이 갑자기 안 될 때</h3>
       <div class="settings-help-box">
-        <strong>💡 영수증 인식이 갑자기 안 될 때</strong>
         <p>Google이 가끔 특정 Gemini 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜨면 이 문제부터 의심해보세요.</p>
         <ol>
           <li>영수증을 업로드했는데 "인식 실패" 화면이 뜨면, 이 앱을 만들 때 쓰던 Claude 대화창에 "인식 안돼"라고 말해서 원인을 확인해달라고 하세요.</li>
@@ -898,69 +960,6 @@
             그 이름으로 이 줄만 바꾸고 GitHub에서 "Commit changes"를 누르면 자동으로 재배포됩니다.</li>
         </ol>
       </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>3. 연구과제명 목록</h3>
-      <table class="settings-table">
-        <thead><tr><th>연구과제명</th><th>과제번호(SAP)</th><th></th></tr></thead>
-        <tbody id="projectsTableBody"></tbody>
-      </table>
-      <button class="link-btn" onclick="addProject()">+ 과제 추가</button>
-    </div>
-
-    <div class="settings-section">
-      <h3>4. 예산 구분 (목 - 세부사업명)</h3>
-      <div id="budgetGroupsList"></div>
-      <button class="link-btn" onclick="addBudgetGroup()">+ 목 추가</button>
-    </div>
-
-    <div class="settings-section">
-      <h3>5. 필요서류 마스터 데이터 관리</h3>
-      <div class="budget-bar">
-        <label for="docsEditCategory">예산 항목 성격 선택</label>
-        <select id="docsEditCategory" onchange="renderDocsEditor()">
-          <option value="general">일반구매(물품)</option>
-          <option value="lecture">강사비</option>
-          <option value="business">업무추진비</option>
-          <option value="education">교육참가비</option>
-          <option value="meal">식사·도시락·다과비</option>
-          <option value="travel">여비</option>
-          <option value="fuel">주유비</option>
-          <option value="utility">공공요금·우편발송</option>
-        </select>
-      </div>
-      <div class="settings-subsection">
-        <h4>📌 공통 필수 확인사항 (모든 항목 공통)</h4>
-        <div id="commonNoticesEditor"></div>
-      </div>
-      <div class="settings-subsection">
-        <h4>💡 자동 안내 문구</h4>
-        <div id="blueNotesEditor"></div>
-      </div>
-      <div class="settings-subsection">
-        <h4>⚠ 주의사항 문구</h4>
-        <div id="orangeNotesEditor"></div>
-      </div>
-      <div class="settings-subsection">
-        <h4>필요서류 목록</h4>
-        <div id="docsListEditor"></div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3>6. 서식별 인쇄 주의사항 관리</h3>
-      <div class="budget-bar">
-        <label for="printNoteFormSelect">서식 선택</label>
-        <select id="printNoteFormSelect" onchange="renderPrintNoteEditor()">
-          <option value="receipt">영수증 첨부양식</option>
-          <option value="gumsu1">물품검수조서 1</option>
-          <option value="gumsu2">물품검수조서 2</option>
-          <option value="photo">사진 첨부양식</option>
-          <option value="purchasePhoto">구매건 사진양식</option>
-        </select>
-      </div>
-      <div id="printNoteEditor"></div>
     </div>
 
     <div class="settings-section">
@@ -1187,12 +1186,11 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         piName: '민성호',
         contactInfo: '박유정 / 033-746-0198 내선4',
       },
-      aiModel: 'gemini',
       projects: [
         { name: '2026년 원주시정신건강복지센터 통합정신건강증진사업', number: '2025-71-0135' },
       ],
       budgetGroups: [
-        { mok: '수용비', subs: ['센터운용물품비'] },
+        { mok: '수용비', sub: '센터운용물품비' },
       ],
       commonNotices: DEFAULT_COMMON_NOTICES.slice(),
       categoryDocs: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_DOCS)),
@@ -1206,6 +1204,26 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     };
   }
 
+  // 예전 버전엔 목 하나에 세부사업명 여러 개가 묶인 구조({mok, subs:[...]})였는데,
+  // 지금은 구분1-구분2 한 쌍이 한 행인 평평한 구조({mok, sub})로 바뀌었다.
+  // 브라우저에 저장된 옛 데이터를 열 때 자동으로 변환해준다.
+  function migrateBudgetGroups(list) {
+    if (!Array.isArray(list)) return [];
+    const result = [];
+    list.forEach(function (g) {
+      if (g && Array.isArray(g.subs)) {
+        if (g.subs.length) {
+          g.subs.forEach(function (s) { result.push({ mok: g.mok || '', sub: s || '' }); });
+        } else {
+          result.push({ mok: g.mok || '', sub: '' });
+        }
+      } else if (g) {
+        result.push({ mok: g.mok || '', sub: g.sub || '' });
+      }
+    });
+    return result;
+  }
+
   function loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -1213,10 +1231,12 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         const parsed = JSON.parse(raw);
         const base = defaultSettings();
         // 새 버전에서 필드가 추가돼도 누락되지 않도록 얕은 병합
-        return Object.assign(base, parsed, {
+        const merged = Object.assign(base, parsed, {
           profile: Object.assign(base.profile, parsed.profile),
           printNotes: Object.assign(base.printNotes, parsed.printNotes),
         });
+        merged.budgetGroups = migrateBudgetGroups(merged.budgetGroups);
+        return merged;
       }
     } catch (e) {
       console.warn('개인설정을 불러오지 못해 기본값을 사용합니다.', e);
@@ -1314,11 +1334,9 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     document.getElementById('s_piName').value = appSettings.profile.piName;
     document.getElementById('s_contactInfo').value = appSettings.profile.contactInfo;
 
-    renderAiModelOptions();
     renderProjectsTable();
-    renderBudgetGroups();
+    renderBudgetGroupsTable();
     renderDocsEditor();
-    renderPrintNoteEditor();
   }
 
   // ---- 1. 기본 정보 ----
@@ -1335,40 +1353,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     refreshCurrentPreview();
   }
 
-  // ---- 2. AI 모델 선택 ----
-  const AI_MODEL_OPTIONS = [
-    { key: 'gemini', label: 'Gemini', ready: true },
-    { key: 'claude', label: 'Claude', ready: false },
-    { key: 'chatgpt', label: 'ChatGPT', ready: false },
-  ];
-  function renderAiModelOptions() {
-    const el = document.getElementById('aiModelOptions');
-    el.innerHTML = '';
-    AI_MODEL_OPTIONS.forEach(function (opt) {
-      const row = document.createElement('label');
-      row.className = 'ai-model-row' + (opt.ready ? '' : ' disabled');
-      const input = document.createElement('input');
-      input.type = 'radio';
-      input.name = 'aiModel';
-      input.value = opt.key;
-      input.checked = appSettings.aiModel === opt.key;
-      input.disabled = !opt.ready;
-      input.onchange = function () {
-        appSettings.aiModel = opt.key;
-        saveSettings();
-      };
-      row.appendChild(input);
-      row.appendChild(document.createTextNode(' ' + opt.label + ' '));
-      if (!opt.ready) {
-        const em = document.createElement('em');
-        em.textContent = '(준비 중 — 아직 연동되지 않음)';
-        row.appendChild(em);
-      }
-      el.appendChild(row);
-    });
-  }
-
-  // ---- 3. 연구과제명 목록 ----
+  // ---- 2. 연구과제 ----
   function renderProjectsTable() {
     const body = document.getElementById('projectsTableBody');
     body.innerHTML = '';
@@ -1416,71 +1401,126 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     refreshCurrentPreview();
   }
 
-  // ---- 4. 예산 구분 (목 - 세부사업명) ----
-  function renderBudgetGroups() {
-    const container = document.getElementById('budgetGroupsList');
-    container.innerHTML = '';
-    appSettings.budgetGroups.forEach(function (g, gi) {
-      const card = document.createElement('div');
-      card.className = 'budget-group-card';
-
-      const header = document.createElement('div');
-      header.className = 'budget-group-header';
-      const mokInput = document.createElement('input');
-      mokInput.value = g.mok;
-      mokInput.placeholder = '목 이름 (예: 수용비)';
-      mokInput.oninput = function () { g.mok = mokInput.value; saveSettings(); };
-      const delMokBtn = document.createElement('button');
-      delMokBtn.className = 'row-remove-btn';
-      delMokBtn.textContent = '✕ 목 삭제';
-      delMokBtn.onclick = function () {
-        appSettings.budgetGroups.splice(gi, 1);
-        saveSettings();
-        renderBudgetGroups();
-      };
-      header.appendChild(mokInput);
-      header.appendChild(delMokBtn);
-      card.appendChild(header);
-
-      const subsList = document.createElement('div');
-      subsList.className = 'budget-subs-list';
-      g.subs.forEach(function (sub, si) {
-        const row = document.createElement('div');
-        row.className = 'settings-list-row';
-        const subInput = document.createElement('input');
-        subInput.value = sub;
-        subInput.placeholder = '세부사업명';
-        subInput.oninput = function () { g.subs[si] = subInput.value; saveSettings(); };
-        const subDel = document.createElement('button');
-        subDel.className = 'row-remove-btn';
-        subDel.textContent = '✕';
-        subDel.onclick = function () {
-          g.subs.splice(si, 1);
-          saveSettings();
-          renderBudgetGroups();
-        };
-        row.appendChild(subInput);
-        row.appendChild(subDel);
-        subsList.appendChild(row);
-      });
-      const addSubBtn = document.createElement('button');
-      addSubBtn.className = 'link-btn';
-      addSubBtn.textContent = '+ 세부사업명 추가';
-      addSubBtn.onclick = function () {
-        g.subs.push('');
-        saveSettings();
-        renderBudgetGroups();
-      };
-      subsList.appendChild(addSubBtn);
-      card.appendChild(subsList);
-
-      container.appendChild(card);
+  // ---- 3. 예산 구분 (구분1 - 구분2) : 연구과제 목록과 같은 평평한(flat) 테이블 구조 ----
+  function renderBudgetGroupsTable() {
+    const body = document.getElementById('budgetGroupsTableBody');
+    body.innerHTML = '';
+    appSettings.budgetGroups.forEach(function (g, idx) {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td><input value="' + esc(g.mok) + '" oninput="onBudgetGroupInput(' + idx + ',\'mok\',this.value)"></td>' +
+        '<td><input value="' + esc(g.sub) + '" oninput="onBudgetGroupInput(' + idx + ',\'sub\',this.value)"></td>' +
+        '<td><button class="row-remove-btn" onclick="removeBudgetGroup(' + idx + ')">✕</button></td>';
+      body.appendChild(tr);
     });
   }
-  function addBudgetGroup() {
-    appSettings.budgetGroups.push({ mok: '', subs: [] });
+  function onBudgetGroupInput(idx, field, value) {
+    appSettings.budgetGroups[idx][field] = value;
     saveSettings();
-    renderBudgetGroups();
+  }
+  function addBudgetGroup() {
+    appSettings.budgetGroups.push({ mok: '', sub: '' });
+    saveSettings();
+    renderBudgetGroupsTable();
+  }
+  function removeBudgetGroup(idx) {
+    appSettings.budgetGroups.splice(idx, 1);
+    saveSettings();
+    renderBudgetGroupsTable();
+  }
+
+  // ---- CSV 내보내기/가져오기 공용 헬퍼 (연구과제·예산구분처럼 표 형태인 목록에 사용) ----
+  function downloadCsv(filename, headers, rows) {
+    const csv = [headers].concat(rows).map(function (row) {
+      return row.map(csvEscape).join(',');
+    }).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  // 쌍따옴표로 감싼 값, 쉼표 포함 값까지 처리하는 간단한 CSV 파서
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else { inQuotes = false; }
+        } else { field += c; }
+      } else if (c === '"') {
+        inQuotes = true;
+      } else if (c === ',') {
+        row.push(field); field = '';
+      } else if (c === '\r') {
+        // 무시 (\r\n의 \r)
+      } else if (c === '\n') {
+        row.push(field); rows.push(row); row = []; field = '';
+      } else {
+        field += c;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(function (r) { return r.some(function (v) { return v !== ''; }); });
+  }
+  function downloadProjectsCsv() {
+    downloadCsv('연구과제_목록.csv', ['연구과제', '과제번호'], appSettings.projects.map(function (p) {
+      return [p.name, p.number];
+    }));
+  }
+  function importProjectsCsv(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const rows = parseCsv(e.target.result);
+      const input = document.getElementById('projectsImportInput');
+      if (!rows.length) { alert('CSV 내용을 읽지 못했습니다.'); input.value = ''; return; }
+      const dataRows = (rows[0][0] === '연구과제' || rows[0][0] === '연구과제명') ? rows.slice(1) : rows;
+      if (!confirm('지금 연구과제 목록을 이 CSV(' + dataRows.length + '행)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
+        input.value = '';
+        return;
+      }
+      appSettings.projects = dataRows.map(function (r) { return { name: r[0] || '', number: r[1] || '' }; });
+      saveSettings();
+      renderProjectsTable();
+      input.value = '';
+      alert('연구과제 목록을 불러왔습니다.');
+    };
+    reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
+    reader.readAsText(file);
+  }
+  function downloadBudgetGroupsCsv() {
+    downloadCsv('예산구분_목록.csv', ['구분1', '구분2'], appSettings.budgetGroups.map(function (g) {
+      return [g.mok, g.sub];
+    }));
+  }
+  function importBudgetGroupsCsv(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const rows = parseCsv(e.target.result);
+      const input = document.getElementById('budgetGroupsImportInput');
+      if (!rows.length) { alert('CSV 내용을 읽지 못했습니다.'); input.value = ''; return; }
+      const dataRows = (rows[0][0] === '구분1') ? rows.slice(1) : rows;
+      if (!confirm('지금 예산 구분 목록을 이 CSV(' + dataRows.length + '행)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
+        input.value = '';
+        return;
+      }
+      appSettings.budgetGroups = dataRows.map(function (r) { return { mok: r[0] || '', sub: r[1] || '' }; });
+      saveSettings();
+      renderBudgetGroupsTable();
+      input.value = '';
+      alert('예산 구분 목록을 불러왔습니다.');
+    };
+    reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
+    reader.readAsText(file);
   }
 
   // ---- 5. 필요서류 마스터 데이터 관리 ----
@@ -1592,11 +1632,6 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
 
   // ---- 6. 서식별 인쇄 주의사항 관리 ----
-  function renderPrintNoteEditor() {
-    const key = document.getElementById('printNoteFormSelect').value;
-    renderStringListEditor(document.getElementById('printNoteEditor'), appSettings.printNotes[key], '+ 확인사항 추가');
-  }
-
   // ---- 설정 백업 / 복원 ----
   function exportSettings() {
     const blob = new Blob([JSON.stringify(appSettings, null, 2)], { type: 'application/json;charset=utf-8;' });
@@ -1631,6 +1666,7 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         profile: Object.assign(base.profile, parsed.profile),
         printNotes: Object.assign(base.printNotes, parsed.printNotes),
       });
+      appSettings.budgetGroups = migrateBudgetGroups(appSettings.budgetGroups);
       saveSettings();
       renderSettingsScreen();
       renderProjectDropdownOptions();
@@ -1646,15 +1682,20 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   // ---- 예산 구분(목 - 세부사업명) 선택: 회계처리 목록의 "목"/"세목" 컬럼에 쓰인다 ----
   function renderBudgetMokOptions() {
     const sel = document.getElementById('budgetMokSelect');
-    sel.innerHTML = '<option value="">(선택 안 함)</option>' + appSettings.budgetGroups.map(function (g) {
-      return '<option value="' + esc(g.mok) + '"' + (receiptData.budgetMok === g.mok ? ' selected' : '') + '>' + esc(g.mok) + '</option>';
+    const uniqueMoks = [];
+    appSettings.budgetGroups.forEach(function (g) {
+      if (g.mok && uniqueMoks.indexOf(g.mok) === -1) uniqueMoks.push(g.mok);
+    });
+    sel.innerHTML = '<option value="">(선택 안 함)</option>' + uniqueMoks.map(function (m) {
+      return '<option value="' + esc(m) + '"' + (receiptData.budgetMok === m ? ' selected' : '') + '>' + esc(m) + '</option>';
     }).join('');
     renderBudgetSubOptions();
   }
   function renderBudgetSubOptions() {
     const mok = document.getElementById('budgetMokSelect').value;
-    const group = appSettings.budgetGroups.find(function (g) { return g.mok === mok; });
-    const subs = group ? group.subs : [];
+    const subs = appSettings.budgetGroups
+      .filter(function (g) { return g.mok === mok && g.sub; })
+      .map(function (g) { return g.sub; });
     const sel = document.getElementById('budgetSubSelect');
     sel.innerHTML = '<option value="">(선택 안 함)</option>' + subs.map(function (s) {
       return '<option value="' + esc(s) + '"' + (receiptData.budgetSub === s ? ' selected' : '') + '>' + esc(s) + '</option>';
