@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>회계 증빙 자동서식 사용설명서</title>
+<title>회계 증빙 자동서식 실무 매뉴얼</title>
 <style>
   :root {
     --page-bg: #f4f5f7;
@@ -11,8 +11,8 @@
     --border: #e3e4e8;
     --border-strong: #cfd1d6;
     --text-main: #1e2024;
-    --text-sub: #6b6f76;
-    --text-faint: #9a9da3;
+    --text-sub: #595d66;
+    --text-faint: #8e929b;
     --accent: #2f6fed;
     --accent-soft: #eaf1ff;
     --accent-strong: #1c4fc7;
@@ -25,7 +25,7 @@
     --info: #1e4d8f;
     --info-soft: #eaf2ff;
     --info-border: #a9c8f5;
-    --sidebar-w: 216px;
+    --sidebar-w: 230px;
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -36,13 +36,15 @@
     font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", sans-serif;
     line-height: 1.65;
   }
-  a { color: var(--accent); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
 
-  /* ---------- layout: 좌측 목차 + 본문 ---------- */
-  .layout { display: flex; max-width: 1180px; margin: 0 auto; }
+  /* 레이아웃 */
+  .layout { display: flex; max-width: 1200px; margin: 0 auto; }
   .toc {
     width: var(--sidebar-w); flex-shrink: 0; position: sticky; top: 0; align-self: flex-start;
     height: 100vh; overflow-y: auto; padding: 28px 16px 28px 24px; border-right: 1px solid var(--border);
+    background: #fafbfc;
   }
   .toc .toc-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
   .toc .toc-brand .mark {
@@ -50,59 +52,166 @@
     display: flex; align-items: center; justify-content: center;
   }
   .toc .toc-brand .mark svg { width: 14px; height: 14px; }
-  .toc .toc-brand .name { font-weight: 700; font-size: 13.5px; }
-  .toc nav { display: flex; flex-direction: column; gap: 1px; }
+  .toc .toc-brand .name { font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em; }
+  .toc nav { display: flex; flex-direction: column; gap: 2px; }
   .toc nav a {
-    display: block; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--text-sub);
-    text-decoration: none;
+    display: block; padding: 6px 10px; border-radius: 6px; font-size: 12.5px; color: var(--text-sub);
   }
-  .toc nav a:hover { background: var(--accent-soft); color: var(--accent-strong); }
-  .toc nav a.sub { padding-left: 20px; font-size: 12.5px; color: var(--text-faint); }
-  @media (max-width: 860px) {
+  .toc nav a:hover { background: var(--accent-soft); color: var(--accent-strong); text-decoration: none; }
+  .toc nav a.sub { padding-left: 18px; font-size: 11.5px; color: var(--text-faint); }
+  @media (max-width: 920px) {
     .toc { display: none; }
   }
 
-  .content { flex: 1; min-width: 0; padding: 44px 40px 100px; max-width: 760px; }
-  @media (max-width: 720px) { .content { padding: 32px 20px 80px; } }
+  .content { flex: 1; min-width: 0; padding: 44px 44px 120px; max-width: 820px; }
+  @media (max-width: 720px) { .content { padding: 28px 18px 80px; } }
 
-  .doc-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 8px; }
-  h1.h-main { font-size: 28px; font-weight: 800; margin: 0 0 10px; letter-spacing: -0.01em; }
-  .lede { font-size: 15px; color: var(--text-sub); margin: 0 0 26px; max-width: 62ch; }
+  .doc-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+  h1.h-main { font-size: 27px; font-weight: 800; margin: 0 0 10px; letter-spacing: -0.02em; }
+  .lede { font-size: 14.5px; color: var(--text-sub); margin: 0 0 24px; line-height: 1.6; }
 
-  .quicklinks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 48px; }
-  @media (max-width: 560px) { .quicklinks { grid-template-columns: 1fr 1fr; } }
-  .quicklinks a {
-    display: block; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--card-bg); text-decoration: none; color: var(--text-main); font-size: 12.5px; font-weight: 600;
+  /* ==========================================================================
+     비주얼 목차 (Contents Board) 스타일 — 앱의 톤앤매너에 맞춘 모던 카드 룩
+     ========================================================================== */
+  .contents-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
-  .quicklinks a span { display: block; color: var(--text-faint); font-weight: 400; font-size: 11px; margin-top: 2px; }
-  .quicklinks a:hover { border-color: var(--accent); }
+  .contents-header {
+    background: linear-gradient(135deg, #1c4fc7 0%, #2f6fed 100%);
+    color: #fff;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .contents-header .title-ko { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
+  .contents-header .title-en { font-size: 14px; font-weight: 700; opacity: 0.9; letter-spacing: 0.05em; }
+  .contents-body {
+    padding: 12px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .c-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 10px 0;
+  }
+  .c-row + .c-row {
+    border-top: 1px dashed #edeef1;
+  }
+  .c-col-num {
+    width: 80px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .c-num {
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-label {
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+  .c-col-list {
+    flex: 1;
+    min-width: 0;
+  }
+  .c-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin-bottom: 8px;
+    width: 100%;
+  }
+  .c-subitems {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .c-sublink {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #333;
+    padding: 2px 4px;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .c-sublink:hover {
+    background: #f0f4fd;
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+  .c-sublink .sub-name {
+    font-weight: 600;
+  }
+  .c-sublink .sub-badge {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
 
-  section.chapter { margin-bottom: 60px; scroll-margin-top: 20px; }
-  .chapter-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-  .chapter-num { font-size: 12.5px; font-weight: 700; color: var(--text-faint); font-variant-numeric: tabular-nums; }
-  h2 { font-size: 21px; font-weight: 750; margin: 0 0 14px; scroll-margin-top: 20px; }
-  h3 { font-size: 15.5px; font-weight: 700; margin: 26px 0 10px; }
-  h3:first-of-type { margin-top: 20px; }
-  p { margin: 0 0 12px; font-size: 14px; }
-  p.sub { color: var(--text-sub); font-size: 13.5px; }
+  /* 각 대단원별 조화로운 테마 컬러 */
+  .theme-1 { --c: #2f6fed; } /* 블루 */
+  .theme-2 { --c: #059669; } /* 에메랄드 */
+  .theme-3 { --c: #7c3aed; } /* 퍼플 */
+  .theme-4 { --c: #d97706; } /* 앰버 주황 */
+  .theme-5 { --c: #0284c7; } /* 스카이 */
+  .theme-6 { --c: #e11d48; } /* 로즈 레드 */
+  .theme-7 { --c: #475569; } /* 딥 슬레이트 */
 
+  .theme-1 .c-num, .theme-1 .c-label { color: var(--c); }
+  .theme-1 .c-bar { background: var(--c); }
+  .theme-2 .c-num, .theme-2 .c-label { color: var(--c); }
+  .theme-2 .c-bar { background: var(--c); }
+  .theme-3 .c-num, .theme-3 .c-label { color: var(--c); }
+  .theme-3 .c-bar { background: var(--c); }
+  .theme-4 .c-num, .theme-4 .c-label { color: var(--c); }
+  .theme-4 .c-bar { background: var(--c); }
+  .theme-5 .c-num, .theme-5 .c-label { color: var(--c); }
+  .theme-5 .c-bar { background: var(--c); }
+  .theme-6 .c-num, .theme-6 .c-label { color: var(--c); }
+  .theme-6 .c-bar { background: var(--c); }
+  .theme-7 .c-num, .theme-7 .c-label { color: var(--c); }
+  .theme-7 .c-bar { background: var(--c); }
+
+  /* 챕터 타이포그래피 */
+  section.chapter { margin-bottom: 64px; scroll-margin-top: 24px; }
+  .chapter-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .chapter-num { font-size: 12px; font-weight: 800; color: var(--text-faint); letter-spacing: 0.05em; }
+  h2 { font-size: 21px; font-weight: 800; margin: 0 0 16px; scroll-margin-top: 24px; letter-spacing: -0.02em; }
+  h3 { font-size: 15.5px; font-weight: 750; margin: 28px 0 10px; scroll-margin-top: 24px; color: #1e2024; }
+  p { margin: 0 0 12px; font-size: 13.8px; }
+  p.sub { color: var(--text-sub); font-size: 13px; }
+
+  /* 단계 리스트 */
   ol.steps { margin: 0 0 16px; padding-left: 0; list-style: none; counter-reset: step; }
   ol.steps li {
-    counter-increment: step; position: relative; padding: 2px 0 12px 30px; font-size: 14px;
+    counter-increment: step; position: relative; padding: 2px 0 12px 28px; font-size: 13.8px;
   }
   ol.steps li::before {
-    content: counter(step); position: absolute; left: 0; top: 1px; width: 20px; height: 20px;
-    border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 11.5px;
-    font-weight: 700; display: flex; align-items: center; justify-content: center;
+    content: counter(step); position: absolute; left: 0; top: 2px; width: 19px; height: 19px;
+    border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); font-size: 11px;
+    font-weight: 800; display: flex; align-items: center; justify-content: center;
   }
-  ul.plain { margin: 0 0 16px; padding-left: 20px; font-size: 14px; }
+  ul.plain { margin: 0 0 16px; padding-left: 18px; font-size: 13.8px; }
   ul.plain li { margin-bottom: 6px; }
-  code {
-    font-family: ui-monospace, "SF Mono", Consolas, monospace; font-size: 0.88em; background: var(--accent-soft);
-    color: var(--accent-strong); padding: 1px 5px; border-radius: 4px;
-  }
 
+  /* 콜아웃 박스 */
   .callout { display: flex; gap: 10px; padding: 12px 14px; border-radius: 8px; border: 1px solid; margin: 14px 0 18px; font-size: 13px; }
   .callout .ic { flex-shrink: 0; font-size: 15px; line-height: 1.4; }
   .callout .body strong { display: block; font-size: 13px; margin-bottom: 2px; }
@@ -111,106 +220,292 @@
   .callout.danger { background: var(--danger-soft); border-color: var(--danger-border); color: var(--danger); }
 
   /* 표 */
-  table.ref { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 20px; }
+  table.ref { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 18px; }
   table.ref th, table.ref td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  table.ref thead th { font-size: 11px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.03em; border-bottom: 1px solid var(--border-strong); }
-  table.ref td.mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.ref thead th { font-size: 11.5px; font-weight: 700; color: var(--text-faint); border-bottom: 1px solid var(--border-strong); }
+  table.ref td.mono { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
 
-  hr.div { border: none; border-top: 1px solid var(--border); margin: 0 0 40px; }
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 0 0 44px; }
 
-  /* ---------- 화면 축소 미니 목업 (고정 라이트 톤 — 실제 제품 화면 재현) ---------- */
+  /* 미니 목업 화면 */
   .shot {
     border: 1px solid #ccc; border-radius: 8px; background: #fff; overflow: hidden;
-    font-family: -apple-system, "Malgun Gothic", sans-serif; color: #222; margin: 6px 0 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    font-family: -apple-system, "Malgun Gothic", sans-serif; color: #222; margin: 8px 0 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   }
   .shot-header {
-    height: 46px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid #ddd; font-size: 12.5px; gap: 10px;
+    height: 44px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #ddd; font-size: 12px; gap: 10px;
   }
   .shot-brand { display: flex; align-items: center; gap: 7px; }
   .shot-brand .mark {
-    width: 20px; height: 20px; border-radius: 5px; background: #2f6fed; flex: none;
+    width: 18px; height: 18px; border-radius: 5px; background: #2f6fed; flex: none;
     display: flex; align-items: center; justify-content: center;
   }
   .shot-brand .mark svg { width: 11px; height: 11px; }
-  .shot-brand .word { font-weight: 700; font-size: 12.5px; }
+  .shot-brand .word { font-weight: 700; font-size: 12px; }
   .shot-tabs { display: flex; align-items: center; gap: 10px; }
   .shot-tab { font-size: 11.5px; color: #888; border-bottom: 2px solid transparent; padding: 3px 1px; }
   .shot-tab.on { color: #222; font-weight: 700; border-bottom-color: #333; }
-  .shot-body { padding: 16px 18px; }
-  .shot-body .sh1 { font-size: 15px; font-weight: 700; margin: 0 0 10px; }
+  .shot-body { padding: 14px 16px; }
 
-  .mini-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; }
+  .mini-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; background: #fafafa; display: flex; flex-direction: column; gap: 8px; max-width: 260px; }
   .mini-card button { font-size: 12px; padding: 8px 10px; border-radius: 6px; border: 1px solid #999; background: #fff; text-align: left; }
   .mini-card button.reset { color: #c33; border-color: #e0a0a0; }
-  .mini-row { display: flex; gap: 12px; }
-  .mini-row > div { flex: 1; }
 
   .mini-tabbar { display: flex; gap: 4px; border-bottom: 1px solid #e2e2e2; margin-bottom: 8px; }
-  .mini-tabbar span { flex: 1; text-align: center; font-size: 10.5px; font-weight: 700; color: #999; padding: 6px 2px; border-bottom: 2px solid transparent; }
+  .mini-tabbar span { flex: 1; text-align: center; font-size: 10.5px; font-weight: 700; color: #999; padding: 5px 2px; border-bottom: 2px solid transparent; }
   .mini-tabbar span.on { color: #9a5a10; border-bottom-color: #e08a35; }
-  .mini-panel { border: 1px solid #eee; background: #fff2e8; color: #9a5a10; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; }
-  .mini-panel ul { margin: 0; padding-left: 15px; }
-  .mini-panel li + li { margin-top: 4px; }
+  .mini-panel { border: 1px solid #eee; background: #fff2e8; color: #9a5a10; border-radius: 6px; padding: 9px 11px; font-size: 11.5px; }
+  .mini-panel ul { margin: 0; padding-left: 14px; }
 
   .mini-btn-final {
-    background: #3b82f6; color: #fff; border: none; border-radius: 6px; padding: 10px; font-size: 12.5px;
-    font-weight: 700; text-align: center; width: 100%;
+    background: #3b82f6; color: #fff; border: none; border-radius: 6px; padding: 9px 12px; font-size: 12px;
+    font-weight: 700; text-align: center; display: inline-block;
   }
 
-  .closing { border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; background: var(--card-bg); font-size: 13.5px; color: var(--text-sub); }
+  .badge-req { display: inline-block; padding: 2px 7px; background: #eaf1ff; color: #1c4fc7; border: 1px solid #bcd8f5; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+  .badge-opt { display: inline-block; padding: 2px 7px; background: #f3f4f6; color: #555; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+
+  /* 이용약관 스타일 */
+  .terms-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 14px;
+  }
+  .terms-banner {
+    background: #475569;
+    color: #fff;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .terms-body {
+    padding: 18px 20px;
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: #2b2d31;
+  }
+  .terms-article { margin-bottom: 16px; }
+  .terms-article:last-child { margin-bottom: 0; }
+  .terms-article strong { display: block; color: #111; font-size: 14px; margin-bottom: 4px; }
+  .terms-sublist { margin: 4px 0 0; padding-left: 20px; list-style-type: decimal; }
+  .terms-sublist li { margin-bottom: 3px; }
+
+  .closing { border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-top: 40px; background: var(--card-bg); font-size: 13.5px; color: var(--text-sub); }
   .closing b { color: var(--text-main); }
 </style>
 </head>
 <body>
 <div class="layout">
 
+  <!-- 왼쪽 사이드바 목차 -->
   <aside class="toc">
     <div class="toc-brand">
       <span class="mark"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3h11l3 3v15l-3-1.6-2.4 1.6-2.4-1.6L9 21l-2.4-1.6L4 21V6l1-3z" fill="#fff" opacity="0.95"/><path d="M8 9h8M8 12.5h8M8 16h5" stroke="#2f6fed" stroke-width="1.4" stroke-linecap="round"/></svg></span>
       <span class="name">회계 증빙 자동서식</span>
     </div>
     <nav>
-      <a href="#start">시작하기</a>
-      <a href="#step1">1. 기초자료 입력</a>
-      <a href="#step1-a" class="sub">영수증 추가</a>
-      <a href="#step1-b" class="sub">엑셀 업로드</a>
-      <a href="#step1-c" class="sub">직접 입력 / 새 작업</a>
-      <a href="#step2">2. 서식 체크리스트</a>
-      <a href="#step2-a" class="sub">서식 목록·미리보기</a>
-      <a href="#step2-b" class="sub">공통 규정·기준 안내·제출 전 확인</a>
-      <a href="#step2-c" class="sub">전체서식 인쇄</a>
-      <a href="#settings">개인설정</a>
-      <a href="#ledger">처리 완료 목록</a>
-      <a href="#faq">문제 해결 / FAQ</a>
+      <a href="#contents-board">📌 전체 목차 (Contents)</a>
+      <a href="#chap-1">1. 시작하기 (전체 흐름)</a>
+      <a href="#sec-1-1" class="sub">1.1. 주요 탭 안내</a>
+      <a href="#sec-1-2" class="sub">1.2. 전체 업무 흐름</a>
+      <a href="#sec-1-3" class="sub">1.3. 화면 이동·데이터 보존</a>
+      <a href="#chap-2">2. 개인설정 (사전 준비)</a>
+      <a href="#sec-2-1" class="sub">2.1. 필수 설정 (1~3단계)</a>
+      <a href="#sec-2-2" class="sub">2.2. 상황별 참조 (4~5단계)</a>
+      <a href="#sec-2-3" class="sub">2.3. 설정 데이터 백업·복원</a>
+      <a href="#chap-3">3. 기초자료 입력</a>
+      <a href="#sec-3-1" class="sub">3.1. 영수증 이미지 추가</a>
+      <a href="#sec-3-2" class="sub">3.2. 엑셀 일괄 업로드</a>
+      <a href="#sec-3-3" class="sub">3.3. 수기입력 / 새 작업</a>
+      <a href="#sec-3-4" class="sub">3.4. 필수 항목 및 품의목록</a>
+      <a href="#chap-4">4. 서식 체크리스트</a>
+      <a href="#sec-4-1" class="sub">4.1. 예산 성격 및 서식 분류</a>
+      <a href="#sec-4-2" class="sub">4.2. 서류 클릭 vs 체크박스</a>
+      <a href="#sec-4-3" class="sub">4.3. 3단 안내 탭 점검</a>
+      <a href="#sec-4-4" class="sub">4.4. 이 서식 인쇄 (개별)</a>
+      <a href="#sec-4-5" class="sub">4.5. 전체서식 인쇄 (누적)</a>
+      <a href="#chap-5">5. 처리 완료 목록</a>
+      <a href="#sec-5-1" class="sub">5.1. 지출 대장 자동 누적</a>
+      <a href="#sec-5-2" class="sub">5.2. 과제별 필터 및 검색</a>
+      <a href="#sec-5-3" class="sub">5.3. 엑셀 다운로드</a>
+      <a href="#chap-6">6. 문제 해결 (FAQ)</a>
+      <a href="#sec-6-1" class="sub">6.1. 인쇄물 URL·날짜 표시</a>
+      <a href="#sec-6-2" class="sub">6.2. 처리 완료 목록 미반영</a>
+      <a href="#sec-6-3" class="sub">6.3. 다른 컴퓨터 데이터 복원</a>
+      <a href="#sec-6-4" class="sub">6.4. 새 작업 초기화 주의</a>
+      <a href="#sec-6-5" class="sub">6.5. 영수증 인식 안 될 때</a>
+      <a href="#chap-7">7. 이용약관 및 면책공지</a>
+      <a href="#sec-7-1" class="sub">7.1. 목적 및 무상 제공</a>
+      <a href="#sec-7-2" class="sub">7.2. 최종 검토 책임</a>
+      <a href="#sec-7-3" class="sub">7.3. 사용자 의무·데이터 보관</a>
     </nav>
   </aside>
 
+  <!-- 오른쪽 본문 -->
   <main class="content">
 
-    <p class="doc-title">사용설명서</p>
-    <h1 class="h-main">회계 증빙 자동서식, 이렇게 씁니다</h1>
+    <p class="doc-title">실무 가이드북</p>
+    <h1 class="h-main">회계 증빙 자동서식 실무 매뉴얼</h1>
     <p class="lede">
-      영수증을 올리거나 직접 입력하면, 필요한 회계 증빙 서식을 자동으로 채워 한 번에 인쇄까지 도와주는
-      프로그램입니다. 화면에 보이는 순서 그대로 따라 하시면 됩니다.
+      영수증 이미지나 지출 내역을 입력하면 정산에 필요한 공공 회계 서식을 자동으로 완성하고,
+      규정 점검, 일괄 인쇄 및 지출 대장 관리까지 원스톱으로 지원하는 보조 도구입니다.
     </p>
 
-    <div class="quicklinks">
-      <a href="#step1">기초자료 입력<span>영수증·엑셀·직접 입력</span></a>
-      <a href="#step2">서식 체크리스트<span>서식 확인 · 인쇄</span></a>
-      <a href="#settings">개인설정<span>과제·서류 관리</span></a>
-      <a href="#ledger">처리 완료 목록<span>인쇄 기록 · 엑셀</span></a>
-      <a href="#faq">문제 해결<span>인쇄·인식 오류</span></a>
-      <a href="#start">전체 흐름 보기<span>한눈에 요약</span></a>
+    <!-- 책임 고지 경고 배너 -->
+    <div class="callout warn" style="margin-top:-8px; margin-bottom:30px;">
+      <span class="ic">⚠️</span>
+      <div class="body">
+        <strong>업무 보조 도구 이용 안내 및 최종 검토 책임</strong>
+        본 프로그램은 회계 증빙 서식 작성의 편의를 돕기 위해 제작된 보조 도구입니다.
+        영수증 자동 인식 및 서식 자동 채우기 결과는 원본 자료 상태에 따라 차이가 있을 수 있으므로,
+        <b>인쇄 및 최종 제출 전 모든 기재 사항(금액, 품목, 일자, 서명란 등)의 정확성은 반드시 작성자 본인이 직접 꼼꼼하게 대조·검토</b>해야 합니다.
+      </div>
     </div>
 
-    <!-- ============ 시작하기 ============ -->
-    <section class="chapter" id="start">
-      <h2>시작하기</h2>
+    <!-- ==========================================================================
+         비주얼 목차 카드 (Contents Board)
+         ========================================================================== -->
+    <div class="contents-card" id="contents-board">
+      <div class="contents-header">
+        <span class="title-ko">목차</span>
+        <span class="title-en">CONTENTS</span>
+      </div>
+      <div class="contents-body">
+
+        <!-- 1. 시작하기 -->
+        <div class="c-row theme-1">
+          <div class="c-col-num">
+            <span class="c-num">1</span>
+            <span class="c-label">시작하기</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-1-1" class="c-sublink"><span class="sub-name">1.1. 프로그램 개요 및 주요 탭 안내</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-1-2" class="c-sublink"><span class="sub-name">1.2. 전체 업무 진행 흐름 요약</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-1-3" class="c-sublink"><span class="sub-name">1.3. 화면 이동 및 입력 데이터 보존 안내</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 개인설정 -->
+        <div class="c-row theme-2">
+          <div class="c-col-num">
+            <span class="c-num">2</span>
+            <span class="c-label">개인설정</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-2-1" class="c-sublink"><span class="sub-name">2.1. [필수] 1~3단계: 기본 정보 · 연구과제 · 예산 구분 등록</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-2-2" class="c-sublink"><span class="sub-name">2.2. [참조] 4~5단계: 필요서류 마스터 데이터 · 도움말 관리</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-2-3" class="c-sublink"><span class="sub-name">2.3. 로컬 브라우저 보안 및 JSON 설정 백업·복원</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 기초자료 입력 -->
+        <div class="c-row theme-3">
+          <div class="c-col-num">
+            <span class="c-num">3</span>
+            <span class="c-label">기초자료</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-3-1" class="c-sublink"><span class="sub-name">3.1. 영수증 이미지 추가 (사진 자동 인식)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-3-2" class="c-sublink"><span class="sub-name">3.2. 엑셀 업로드 (표준 양식 다운로드 및 일괄 등록)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-3-3" class="c-sublink"><span class="sub-name">3.3. 직접 입력 및 '새 작업' 데이터 초기화 주의사항</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-3-4" class="c-sublink"><span class="sub-name">3.4. 필수 입력 항목(지출내역) 및 품의서 목록 CSV 다운로드</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 서식 체크리스트 -->
+        <div class="c-row theme-4">
+          <div class="c-col-num">
+            <span class="c-num">4</span>
+            <span class="c-label">서식점검</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-4-1" class="c-sublink"><span class="sub-name">4.1. 예산 성격 선택 및 필수 서류 자동 분류 (110만 원 기준)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-4-2" class="c-sublink"><span class="sub-name">4.2. 💡 서류 박스 클릭(미리보기) vs 네모 체크박스(업무 점검)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-4-3" class="c-sublink"><span class="sub-name">4.3. 3단 안내 탭 점검 (공통 규정 / 기준 안내 / 제출 전 확인)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-4-4" class="c-sublink"><span class="sub-name">4.4. 🖨 이 서식 인쇄 (개별 인쇄 시 머리글·바닥글 해제)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-4-5" class="c-sublink"><span class="sub-name">4.5. 🖨 전체서식 인쇄 (일괄 출력 및 '처리 완료 목록' 자동 누적)</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 처리 완료 목록 -->
+        <div class="c-row theme-5">
+          <div class="c-col-num">
+            <span class="c-num">5</span>
+            <span class="c-label">완료목록</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-5-1" class="c-sublink"><span class="sub-name">5.1. 지출 대장 자동 누적 기록 확인</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-5-2" class="c-sublink"><span class="sub-name">5.2. 연구과제별 필터 및 상세 내역 검색</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-5-3" class="c-sublink"><span class="sub-name">5.3. 회계 대장 엑셀(CSV) 다운로드</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. 문제 해결 (FAQ) -->
+        <div class="c-row theme-6">
+          <div class="c-col-num">
+            <span class="c-num">6</span>
+            <span class="c-label">문제해결</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-6-1" class="c-sublink"><span class="sub-name">6.1. 인쇄물 상·하단에 주소(URL)나 날짜가 찍힐 때</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-6-2" class="c-sublink"><span class="sub-name">6.2. 인쇄 후 처리 완료 목록에 내역이 나타나지 않을 때</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-6-3" class="c-sublink"><span class="sub-name">6.3. 다른 컴퓨터에서 작업 시 기존 데이터 복원 방법</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-6-4" class="c-sublink"><span class="sub-name">6.4. '새 작업' 클릭 후 입력 내용이 지워졌을 때 대처법</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-6-5" class="c-sublink"><span class="sub-name">6.5. 영수증 인식이 갑자기 안 될 때</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. 이용약관 및 면책공지 -->
+        <div class="c-row theme-7">
+          <div class="c-col-num">
+            <span class="c-num">7</span>
+            <span class="c-label">이용약관</span>
+          </div>
+          <div class="c-col-list">
+            <div class="c-bar"></div>
+            <div class="c-subitems">
+              <a href="#sec-7-1" class="c-sublink"><span class="sub-name">7.1. 제1조 (목적) 및 제2조 (무상 제공 및 무보증)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-7-2" class="c-sublink"><span class="sub-name">7.2. 제3조 (최종 검토 책임 및 책임의 제한)</span><span class="sub-badge">바로가기 ↗</span></a>
+              <a href="#sec-7-3" class="c-sublink"><span class="sub-name">7.3. 제4조 (사용자의 의무 및 로컬 데이터 보관 규정)</span><span class="sub-badge">바로가기 ↗</span></a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ CHAPTER 01. 시작하기 ============ -->
+    <section class="chapter" id="chap-1">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 01</span></div>
+      <h2>1. 시작하기 (전체 흐름)</h2>
+      
+      <h3 id="sec-1-1">1.1. 프로그램 개요 및 주요 탭 안내</h3>
       <p>
-        화면 맨 위에는 항상 세 개의 탭이 있습니다. 지금 보고 있는 탭에는 밑줄이 표시됩니다.
+        화면 위쪽에는 항상 고정된 세 개의 메인 탭이 있습니다. 작업 상황에 맞추어 자유롭게 이동할 수 있으며, 현재 보고 있는 탭에 밑줄이 표시됩니다.
       </p>
+
       <div class="shot">
         <div class="shot-header">
           <div class="shot-brand">
@@ -224,31 +519,122 @@
           </div>
         </div>
       </div>
+
       <table class="ref">
-        <thead><tr><th>탭</th><th>용도</th></tr></thead>
+        <thead><tr><th>탭 명칭</th><th>역할 및 주요 작업</th></tr></thead>
         <tbody>
-          <tr><td><b>⚙ 개인설정</b></td><td>연구과제·예산구분·필요서류 목록 등 기초 데이터를 관리합니다.</td></tr>
-          <tr><td><b>🧾 문서 만들기</b></td><td>실제로 증빙 서식을 채우고 인쇄하는 작업 화면입니다(1·2단계).</td></tr>
-          <tr><td><b>📋 처리 완료 목록</b></td><td>지금까지 인쇄 완료한 건들의 기록을 보고 엑셀로 받습니다.</td></tr>
+          <tr>
+            <td><b>⚙ 개인설정</b></td>
+            <td>기본 정보, 연구과제명, 예산 구분(목-세목) 등 기초 데이터를 등록합니다. <b>(최초 1회 필수)</b></td>
+          </tr>
+          <tr>
+            <td><b>🧾 문서 만들기</b></td>
+            <td>기초자료를 입력하고 규정에 맞는 증빙 서식을 생성·검토하여 인쇄하는 상시 작업 공간입니다.</td>
+          </tr>
+          <tr>
+            <td><b>📋 처리 완료 목록</b></td>
+            <td><b>'전체서식 인쇄'를 완료한 건들이 누적 보관</b>되며, 지출 대장을 엑셀(CSV)로 내려받습니다.</td>
+          </tr>
         </tbody>
       </table>
+
+      <h3 id="sec-1-2">1.2. 전체 업무 진행 흐름 요약</h3>
+      <ol class="steps">
+        <li><b>개인설정 등록 (사전 준비)</b>: 작업 전 연구책임자 소속/성명, 과제명, 예산 목-세목을 등록합니다.</li>
+        <li><b>기초자료 입력</b>: 영수증 사진 업로드, 엑셀 등록, 직접 수기 입력 중 한 방식을 택해 내용을 채웁니다.</li>
+        <li><b>서식 점검 및 인쇄</b>: 예산 성격을 고르고 생성된 서식을 검토한 뒤 <b>[전체서식 인쇄]</b>를 실행합니다.</li>
+        <li><b>대장 관리</b>: 인쇄가 완료된 건이 <b>처리 완료 목록</b>에 자동 기록되며 필요 시 엑셀로 백업합니다.</li>
+      </ol>
+
+      <h3 id="sec-1-3">1.3. 화면 이동 및 입력 데이터 보존 안내</h3>
       <div class="callout info">
         <span class="ic">💡</span>
-        <div class="body"><strong>작업 중 아무 탭이나 눌러도 됩니다</strong>다시 "🧾 문서 만들기"를 누르면 하던 작업 그대로 돌아옵니다.</div>
-      </div>
-      <div class="callout warn">
-        <span class="ic">⚠</span>
-        <div class="body"><strong>데이터는 이 브라우저에만 저장됩니다</strong>다른 컴퓨터나 다른 브라우저에서는 보이지 않습니다. 개인설정 맨 아래 "설정 백업 다운로드"로 주기적으로 백업해두세요.</div>
+        <div class="body">
+          <strong>화면 전환 안내</strong>
+          작업 도중 화면 오른쪽 위의 "⚙ 개인설정"이나 "📋 처리 완료 목록"을 열람한 뒤, 다시 "🧾 문서 만들기"를 누르면 작성 중이던 내역이 초기화되지 않고 그대로 유지됩니다.
+        </div>
       </div>
     </section>
 
     <hr class="div">
 
-    <!-- ============ 1단계 ============ -->
-    <section class="chapter" id="step1">
-      <div class="chapter-head"><span class="chapter-num">1단계</span></div>
-      <h2>기초자료 입력</h2>
-      <p>영수증을 올리거나 직접 입력해서, 서식에 들어갈 기본 정보를 채우는 단계입니다. 아래 세 가지 방법 중 하나를 씁니다.</p>
+    <!-- ============ CHAPTER 02. 개인설정 ============ -->
+    <section class="chapter" id="chap-2">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 02</span></div>
+      <h2>2. 개인설정 (사전 준비)</h2>
+      <p>
+        기초자료 입력 전 본인의 정보와 과제, 예산 분류를 먼저 등록해야 합니다.
+        <b>1~3번 항목을 설정하고 나면 바로 정산 작업을 시작할 수 있으며, 4~5번은 규정 확인이나 특이사항 발생 시에만 확인</b>하시면 됩니다.
+      </p>
+
+      <!-- 2.1 필수 -->
+      <h3 id="sec-2-1">2.1. [필수] 작업 전 필수 설정 (1~3단계)<span class="badge-req">필수 설정</span></h3>
+      <table class="ref">
+        <thead><tr><th>설정 항목</th><th>세부 내용 및 연동 기능</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">1. 기본 정보</td>
+            <td>연구책임자 소속·성명, 담당자/연락처, 본인 이름 등록 (영수증 비고란 및 서식 서명란 자동 반영)</td>
+          </tr>
+          <tr>
+            <td class="mono">2. 연구과제</td>
+            <td>연구과제명과 SAP 과제번호 등록 (기초자료 입력 시 드롭박스 연동으로 과제번호 자동 입력)</td>
+          </tr>
+          <tr>
+            <td class="mono">3. 예산 구분</td>
+            <td>구분1(목) 및 구분2(세목) 목록 관리 (접이식 관리, CSV 다운로드 및 일괄 업로드 지원)</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout info">
+        <span class="ic">✔</span>
+        <div class="body">
+          <strong>1~3단계 설정 완료 후 즉시 작업 가능</strong>
+          위 세 가지 기초 등록을 마쳤다면 상단 "🧾 문서 만들기" 탭을 눌러 곧바로 영수증 정산 작업을 시작하실 수 있습니다.
+        </div>
+      </div>
+
+      <!-- 2.2 참조 -->
+      <h3 id="sec-2-2">2.2. [참조] 지침 확인 및 문제 대응 설정 (4~5단계)<span class="badge-opt">상황별 참조</span></h3>
+      <p class="sub">평소에는 수정할 필요가 없으며, 정산 지침이 변경되었거나 도움말 문구를 개정할 때만 펼쳐서 확인합니다.</p>
+      <table class="ref">
+        <thead><tr><th>설정 항목</th><th>확인이 필요한 경우</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">4. 필요서류 마스터 데이터</td>
+            <td>
+              산학협력단 회계 지침 개정으로 공통 규정·기준 안내·제출 전 확인 문구를 갱신해야 할 때 확인합니다.
+              (이 세 문구는 화면에서 직접 수정하지 않고 <b>'⬇ 다운로드'</b> 후 txt 수정본을 <b>'⬆ 업로드로 수정'</b>하여 통째로 교체합니다.
+              반면 <b>서류 목록 자체(항목명·활성 여부)는 화면에서 입력칸과 체크박스로 바로 수정</b>합니다.)
+            </td>
+          </tr>
+          <tr>
+            <td class="mono">5. 도움말 관리</td>
+            <td>화면 상단의 [❓ 도움말] 안내창에 노출되는 안내 제목과 내용을 편집하거나 새 가이드를 추가할 때 확인합니다.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 2.3 백업 -->
+      <h3 id="sec-2-3">2.3. 로컬 브라우저 보안 및 JSON 설정 백업·복원</h3>
+      <div class="callout warn">
+        <span class="ic">⚠️</span>
+        <div class="body">
+          <strong>데이터 기기 내 보관 주의</strong>
+          등록된 설정 데이터는 정보 보안을 위해 외부 서버로 전송되지 않고 사용 중인 브라우저 내부(LocalStorage)에만 안전하게 저장됩니다. 다른 컴퓨터로 옮기거나 브라우저 캐시를 정리할 경우에 대비해 개인설정 화면 아래쪽의 <b>[⬇ 설정 백업 다운로드]</b>를 통해 JSON 백업 파일을 정기적으로 보관해 두세요.
+        </div>
+      </div>
+    </section>
+
+    <hr class="div">
+
+    <!-- ============ CHAPTER 03. 기초자료 입력 ============ -->
+    <section class="chapter" id="chap-3">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 03</span></div>
+      <h2>3. 기초자료 입력</h2>
+      <p>
+        개인설정이 완료된 후 영수증 정산을 시작하는 첫 화면입니다. 왼쪽 카드에서 세 가지 방식 중 하나를 선택해 데이터를 채웁니다.
+      </p>
 
       <div class="shot">
         <div class="shot-body">
@@ -260,57 +646,74 @@
         </div>
       </div>
 
-      <h3 id="step1-a">📎 영수증 추가 — 사진으로 자동 인식</h3>
-      <ol class="steps">
-        <li>"📎 영수증 추가"를 누르거나, 영수증 사진을 왼쪽 점선 칸에 그대로 끌어다 놓습니다(JPG, PNG 등).</li>
-        <li>AI가 영수증을 읽어 연구과제·품목·금액 등을 자동으로 채웁니다. 잠시 기다려주세요.</li>
-        <li>다 채워지면 오른쪽 화면에서 내용이 맞는지 확인하고, 틀린 칸은 직접 고칩니다.</li>
-      </ol>
-      <div class="callout warn">
-        <span class="ic">⚠</span>
-        <div class="body"><strong>인식이 계속 "실패"로만 뜬다면</strong>글자가 흐릿하거나 각도가 많이 기울어진 사진은 인식이 어려울 수 있습니다. 그래도 계속 실패하면 <a href="#faq-recognize">문제 해결</a>을 확인하세요.</div>
-      </div>
+      <h3 id="sec-3-1">3.1. 영수증 이미지 추가 (사진 자동 인식)</h3>
+      <p>
+        <b>📎 영수증 추가</b> 버튼을 누르거나 영수증 이미지(JPG, PNG)를 점선 박스로 끌어다 놓습니다.
+        AI가 이미지 속 품목, 단가, 수량, 결제일자, 업체명을 자동으로 읽어 입력창에 채워 넣습니다.
+      </p>
 
-      <h3 id="step1-b">📊 엑셀 업로드 — 여러 건을 한 번에</h3>
-      <ol class="steps">
-        <li>버튼 옆의 "⬇ 양식"을 눌러 빈 엑셀 서식을 내려받습니다.</li>
-        <li>엑셀에 항목을 채운 뒤 저장합니다.</li>
-        <li>"📊 엑셀 업로드"로 그 파일을 불러오면 오른쪽 화면이 한 번에 채워집니다.</li>
-      </ol>
+      <h3 id="sec-3-2">3.2. 엑셀 업로드 (표준 양식 다운로드 및 일괄 등록)</h3>
+      <p>
+        버튼 옆 <b>"⬇ 양식"</b>으로 표준 CSV 서식을 내려받아 작성한 뒤, <b>📊 엑셀 업로드</b>를 통해 다수의 품목을 한 번에 등록합니다.
+      </p>
 
-      <h3 id="step1-c">↺ 직접 입력 / 새 작업</h3>
-      <p>영수증도 엑셀도 없을 때 직접 타이핑하거나, 완전히 새 건을 시작할 때 씁니다.</p>
+      <h3 id="sec-3-3">3.3. 직접 입력 및 '새 작업' 데이터 초기화 주의사항</h3>
+      <p>
+        지출 내역을 직접 타이핑하거나 새 정산 건을 시작할 때 <b>↺ 직접 입력 / 새 작업</b> 버튼을 누릅니다.
+      </p>
       <div class="callout danger">
         <span class="ic">🛑</span>
-        <div class="body"><strong>누르면 데이터가 지워지며 되돌릴 수 없습니다</strong>연구과제명·과제번호만 남고 결제일자·업체명·품목·영수증 이미지 등 나머지는 전부 초기화됩니다. 확인 팝업이 한 번 더 뜨니 거기서 최종 확인하세요.</div>
+        <div class="body">
+          <strong>초기화 주의사항</strong>
+          이 버튼을 누르면 확인창이 나타나며, 연속 작업을 위해 보존되는 '연구과제명'을 제외한 기존 입력값(품목, 단가, 영수증 사진 등)이 완전히 초기화되므로 신중히 실행하세요.
+        </div>
       </div>
 
-      <h3>오른쪽 화면 — 내용 확인 및 품목 표</h3>
-      <p>연구과제명·과제번호·구분1·구분2·지출내역과 결제일자·업체명을 확인합니다. <span style="color:#1e4d8f;">파란 배경 칸</span>은 자동으로 채워지지 않는 칸이라 직접 입력해야 합니다.</p>
-      <p>아래 품목 표에서 품목을 고치거나 "+ 품목 추가"로 줄을 늘릴 수 있고, 합계금액은 자동으로 계산됩니다. "⬇ 품의서 물품구매목록 다운로드"로 품의서에 붙일 목록을 엑셀로 받을 수 있습니다.</p>
-      <div class="callout info">
-        <span class="ic">💡</span>
-        <div class="body"><strong>110만원을 기준으로 서식이 자동으로 바뀝니다</strong>합계금액이 110만원 이상이면 다음 단계에서 "구매건 사진양식"이 자동으로 목록에 추가됩니다.</div>
-      </div>
-      <p>다 확인했으면 왼쪽 카드 아래 <b>[다음]</b>을 누릅니다.</p>
+      <h3 id="sec-3-4">3.4. 필수 입력 항목(지출내역) 및 품의서 목록 CSV 다운로드</h3>
+      <ul class="plain">
+        <li><b>연구과제명 선택</b>: 드롭박스에서 과제를 고르면 SAP 과제번호가 자동으로 채워집니다.</li>
+        <li><b>구분1 / 구분2 선택</b>: 예산 목과 세목을 드롭박스에서 지정합니다.</li>
+        <li><b>지출내역 (연한 파란색 칸)</b>: 자동 입력되지 않으므로 "문구류 구매", "회의 다과비"와 같이 구체적인 지출 용도를 직접 입력해야 합니다.</li>
+        <li><b>품의서 물품구매목록 다운로드</b>: 품목 표 아래의 버튼을 누르면 내부 품의서 첨부용 CSV 파일을 내려받을 수 있습니다.</li>
+      </ul>
+      <p>모든 항목을 확인했으면 왼쪽 아래의 <b>[다음]</b> 버튼을 눌러 체크리스트 단계로 이동합니다.</p>
     </section>
 
     <hr class="div">
 
-    <!-- ============ 2단계 ============ -->
-    <section class="chapter" id="step2">
-      <div class="chapter-head"><span class="chapter-num">2단계</span></div>
-      <h2>서식 체크리스트</h2>
-      <p>1단계에서 채운 내용으로, 실제 제출할 서식들을 확인하고 인쇄하는 단계입니다.</p>
+    <!-- ============ CHAPTER 04. 서식 체크리스트 ============ -->
+    <section class="chapter" id="chap-4">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 04</span></div>
+      <h2>4. 서식 체크리스트</h2>
+      <p>
+        입력된 기초자료를 바탕으로 회계 규정에 맞춘 증빙 서식들이 완성되는 화면입니다.
+        예산 성격에 따른 필수 서류 점검, 개별 서식 수정 및 인쇄를 진행합니다.
+      </p>
 
-      <ol class="steps">
-        <li><b>예산 항목 성격</b>을 드롭다운에서 고릅니다(일반구매·강사비·업무추진비·교육참가비·식사비·여비·주유비·공공요금 중 하나). 고른 항목에 따라 필요한 서식이 자동으로 정해집니다.</li>
-        <li id="step2-a">왼쪽 목록에서 서식을 클릭하면 가운데에 미리보기가 뜹니다. <span style="color:#1e4d8f;">파란 배경 칸</span>은 클릭해서 바로 고칠 수 있습니다.</li>
-        <li>서식 하나만 인쇄하려면 미리보기 위 "🖨 이 서식 인쇄"를 누릅니다.</li>
-      </ol>
+      <h3 id="sec-4-1">4.1. 예산 성격 선택 및 필수 서류 자동 분류 (110만 원 기준)</h3>
+      <p>
+        화면 왼쪽 위 드롭박스에서 '일반구매', '강사비', '업무추진비', '식사·다과비' 등을 선택하면 성격에 맞는 필수 서류 목록이 자동으로 갱신됩니다.
+        특히 총 구입액이 <b>110만 원 이상</b>일 경우 규정에 따라 '구매건 사진양식'이 자동으로 활성화됩니다.
+      </p>
 
-      <h3 id="step2-b">오른쪽 — 공통 규정 · 기준 안내 · 제출 전 확인</h3>
-      <p>화면에 들어가면 "⚠ 제출 전 확인" 탭이 기본으로 펼쳐져 있습니다. 다른 탭을 누르면 그 내용으로 바뀝니다.</p>
+      <h3 id="sec-4-2">4.2. 💡 서류 박스 클릭(미리보기) vs 네모 체크박스(업무 점검)</h3>
+      <div class="callout info">
+        <span class="ic">💡</span>
+        <div class="body">
+          <strong>안내 팁: 서류명 클릭 vs 체크박스의 차이</strong>
+          <ul style="margin:4px 0 0; padding-left:18px;">
+            <li><b>서류명(박스) 클릭</b>: 해당 서류를 누르면 가운데 화면에 실제 A4 규격 미리보기가 표시되며, 연한 파란색 칸을 직접 눌러 문구를 수정할 수 있습니다.</li>
+            <li><b>네모 체크박스 체크</b>: 인쇄 여부를 지정하는 것이 아니라, 담당자가 해당 서류의 출력·서명 등 최종 준비를 마쳤는지 스스로 점검하기 위한 <b>'업무 확인용 체크리스트'</b>입니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="sec-4-3">4.3. 3단 안내 탭 점검 (공통 규정 / 기준 안내 / 제출 전 확인)</h3>
+      <p>
+        화면 오른쪽 3개 탭 중 <b>'⚠ 제출 전 확인'</b> 탭이 기본으로 열려 있어 제출 전 필수 요건을 점검할 수 있습니다.
+        필요 시 '📌 공통 규정', '💡 기준 안내' 탭을 전환하며 지출 규격과 기준을 대조합니다.
+      </p>
+
       <div class="shot">
         <div class="shot-body">
           <div class="mini-tabbar">
@@ -320,101 +723,148 @@
           </div>
           <div class="mini-panel">
             <ul>
-              <li>거래명세서: 하단 [인수자 : ○○○] 기재, 기관명 정확히 기재</li>
-              <li>물품검수조서: 거래명세서와 동일 날짜, 검수자·입회자 서명 완료</li>
-              <li>품의서: 희망이음 시스템 등록, 결재선 도장 완료</li>
+              <li>거래명세서: 기관명 정확성 및 인수자 성명 기재 확인</li>
+              <li>물품검수조서: 거래명세서와 동일 일자, 검수자·입회자 서명 완료</li>
             </ul>
           </div>
         </div>
       </div>
-      <table class="ref">
-        <thead><tr><th>탭</th><th>내용</th></tr></thead>
-        <tbody>
-          <tr><td>📌 공통 규정</td><td>예산 항목과 상관없이 항상 지켜야 하는 규칙</td></tr>
-          <tr><td>💡 기준 안내</td><td>금액·부수 등 미리 알아두면 되는 기준 정보</td></tr>
-          <tr><td>⚠ 제출 전 확인</td><td>서식을 만들 때 실제로 맞는지 확인해야 할 항목</td></tr>
-        </tbody>
-      </table>
 
-      <h3 id="step2-c">🖨 전체서식 인쇄 — 마지막 단계</h3>
-      <p>왼쪽 서식 목록 바로 아래, 진한 파란색 버튼입니다. 지금 활성화된(체크된) 서식을 전부 이어서 한 번에 인쇄합니다.</p>
+      <h3 id="sec-4-4">4.4. 🖨 이 서식 인쇄 (개별 인쇄 시 머리글·바닥글 해제)</h3>
+      <p>특정 서식 1장만 단독으로 다시 출력할 때 미리보기 화면 오른쪽 위의 <b>[🖨 이 서식 인쇄]</b>를 누릅니다.</p>
+      <div class="callout warn">
+        <span class="ic">⚠️</span>
+        <div class="body">
+          <strong>개별 서식 인쇄 시 필수 조치: "머리글 및 바닥글" 해제</strong>
+          개별 서식을 인쇄할 때는 브라우저 인쇄 설정창에서 <b>"머리글 및 바닥글" 체크를 반드시 해제</b>해야 문서 상단과 하단에 웹페이지 주소(URL)와 시스템 날짜가 인쇄되지 않습니다.
+          (※ 개별 서식 인쇄는 단순 출력 기능이므로 '처리 완료 목록'에는 누적되지 않습니다.)
+        </div>
+      </div>
+
+      <h3 id="sec-4-5">4.5. 🖨 전체서식 인쇄 (일괄 출력 및 '처리 완료 목록' 자동 누적)</h3>
+      <p>
+        해당 지출 건에 필요한 모든 서식 검토를 마쳤을 때 실행하는 최종 단계입니다.
+        왼쪽 서식 목록 바로 아래에 있는 진한 파란색 <b>[🖨 전체서식 인쇄]</b> 버튼을 누릅니다.
+      </p>
       <div class="shot">
-        <div class="shot-body" style="max-width:260px;">
+        <div class="shot-body" style="max-width:240px;">
           <button class="mini-btn-final">🖨 전체서식 인쇄</button>
         </div>
       </div>
       <ol class="steps">
-        <li>버튼을 누르면 인쇄 대화상자가 뜹니다.</li>
-        <li>대화상자에서 <b>"머리글 및 바닥글"</b> 체크를 해제합니다(안 그러면 날짜·URL이 서식 위에 찍힙니다).</li>
-        <li>프린터 선택 칸에서 <b>"PDF로 저장"</b>을 고르고 저장합니다.</li>
-        <li>완료되면 이 건이 "처리 완료 목록"에 자동으로 기록됩니다.</li>
+        <li>버튼을 누르면 체크된 모든 서식이 순서대로 연결되어 브라우저 인쇄 대화상자가 나타납니다. (전체서식 인쇄는 규격화되어 머리글·바닥글 해제 옵션을 신경 쓰지 않아도 됩니다.)</li>
+        <li>프린터 대상에서 <b>"PDF로 저장"</b> 또는 실물 프린터를 선택하여 출력을 완료합니다.</li>
+        <li>
+          <b>처리 완료 목록 자동 누적</b>:
+          <b>반드시 [🖨 전체서식 인쇄]를 실행하여 출력을 마쳐야만 해당 건이 `📋 처리 완료 목록`에 지출 내역으로 자동 등록·누적</b>됩니다.
+        </li>
       </ol>
-      <div class="callout info">
-        <span class="ic">💡</span>
-        <div class="body"><strong>서식이 여러 장이어도 순서대로 이어서 나옵니다</strong>활성화된 서식 수만큼 페이지가 생기니, 인쇄 전 왼쪽 목록에서 필요 없는 서식은 체크를 해제하세요.</div>
-      </div>
     </section>
 
     <hr class="div">
 
-    <!-- ============ 개인설정 ============ -->
-    <section class="chapter" id="settings">
-      <h2>개인설정</h2>
-      <p>연구과제·예산구분·필요서류처럼 자주 안 바뀌는 기초 데이터를 관리하는 화면입니다. 상단 "⚙ 개인설정" 탭에서 엽니다.</p>
-      <table class="ref">
-        <thead><tr><th>항목</th><th>할 수 있는 것</th></tr></thead>
-        <tbody>
-          <tr><td class="mono">1. 기본 정보</td><td>연구책임자소속·성명, 담당자/연락처, 본인 이름 관리</td></tr>
-          <tr><td class="mono">2. 연구과제</td><td>연구과제·과제번호 추가/삭제, CSV로 내려받기</td></tr>
-          <tr><td class="mono">3. 예산 구분</td><td>구분1-구분2 목록 관리, CSV로 내려받기/올리기</td></tr>
-          <tr><td class="mono">4. 필요서류 마스터 데이터</td><td>예산 항목별 공통 규정·기준 안내·제출 전 확인 문구, 필요서류 목록 관리</td></tr>
-          <tr><td class="mono">5. 도움말 관리</td><td>화면 우상단 도움말 팝업에 나오는 항목 추가/수정</td></tr>
-        </tbody>
-      </table>
-      <p>"4. 필요서류 마스터 데이터"의 문구 세 종류(공통 규정·기준 안내·제출 전 확인)는 화면에서 바로 고치지 않고, <b>⬇ 다운로드</b>로 받은 txt 파일을 메모장이나 엑셀에서 한 줄에 한 문구씩 고친 뒤 <b>⬆ 업로드로 수정</b>으로 통째로 교체하는 방식입니다.</p>
-      <div class="callout warn">
-        <span class="ic">⚠</span>
-        <div class="body"><strong>백업을 꼭 받아두세요</strong>맨 아래 "설정 백업 / 복원"에서 <b>⬇ 설정 백업 다운로드</b>로 지금 설정을 파일로 저장해둘 수 있습니다. 브라우저 데이터가 지워지거나 컴퓨터를 옮기면 이 파일로만 되살릴 수 있습니다.</div>
-      </div>
+    <!-- ============ CHAPTER 05. 처리 완료 목록 ============ -->
+    <section class="chapter" id="chap-5">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 05</span></div>
+      <h2>5. 처리 완료 목록</h2>
+
+      <h3 id="sec-5-1">5.1. 지출 대장 자동 누적 기록 확인</h3>
+      <p>
+        앞 단계에서 <b>[🖨 전체서식 인쇄]를 완료한 건들이 날짜, 목, 세목, 지출내역, 금액 항목으로 차곡차곡 자동 기록</b>되는 지출 대장 화면입니다.
+      </p>
+
+      <h3 id="sec-5-2">5.2. 연구과제별 필터 및 상세 내역 검색</h3>
+      <p>
+        화면 위쪽의 연구과제명 선택 드롭박스와 검색창(목·세목·지출내역·날짜)을 통해 특정 지출 건을 신속하게 검색하고 대조할 수 있습니다.
+      </p>
+
+      <h3 id="sec-5-3">5.3. 회계 대장 엑셀(CSV) 다운로드</h3>
+      <p>
+        하단의 <b>[⬇ 엑셀 다운로드]</b> 버튼을 누르면 화면에 조회된 정산 내역 전체를 CSV 엑셀 파일로 내려받아 내부 보고 대장이나 회계 장부로 편리하게 활용할 수 있습니다.
+      </p>
     </section>
 
     <hr class="div">
 
-    <!-- ============ 처리 완료 목록 ============ -->
-    <section class="chapter" id="ledger">
-      <h2>처리 완료 목록</h2>
-      <p>"🖨 전체서식 인쇄"를 완료할 때마다 이 목록에 날짜·목·세목·지출내역·금액이 한 건씩 자동으로 쌓입니다.</p>
-      <ul class="plain">
-        <li><b>연구과제명</b> 드롭다운과 <b>검색</b>창(목·세목·지출내역·날짜)으로 원하는 건을 찾을 수 있습니다.</li>
-        <li>맨 아래 <b>⬇ 엑셀 다운로드</b>로 지금 보이는 목록을 엑셀 파일로 받을 수 있습니다.</li>
-      </ul>
-    </section>
+    <!-- ============ CHAPTER 06. 문제 해결 (FAQ) ============ -->
+    <section class="chapter" id="chap-6">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 06</span></div>
+      <h2>6. 문제 해결 (FAQ)</h2>
 
-    <hr class="div">
+      <h3 id="sec-6-1">6.1. 인쇄물 상·하단에 주소(URL)나 날짜가 찍힐 때</h3>
+      <p>
+        서식을 한 장씩 출력하는 <b>개별 서식 인쇄(`이 서식 인쇄`)</b>를 진행할 때 발생하는 현상입니다. 브라우저 인쇄 대화상자의 추가 설정에서 <b>"머리글 및 바닥글" 체크를 해제</b>하고 인쇄하세요. (`전체서식 인쇄` 시에는 해당하지 않습니다.)
+      </p>
 
-    <!-- ============ FAQ ============ -->
-    <section class="chapter" id="faq">
-      <h2>문제 해결 / 자주 묻는 질문</h2>
+      <h3 id="sec-6-2">6.2. 인쇄 후 처리 완료 목록에 내역이 나타나지 않을 때</h3>
+      <p>
+        미리보기 화면 위의 `이 서식 인쇄`(개별 인쇄)만 실행한 경우에는 대장에 기록되지 않습니다.
+        서식 검토를 모두 마친 후 왼쪽 서식 목록 아래의 <b>[🖨 전체서식 인쇄]</b>를 눌러 출력하셔야 `처리 완료 목록`에 정상적으로 누적 보관됩니다.
+      </p>
 
-      <h3>인쇄물 위·아래에 날짜와 인터넷 주소가 찍혀 나와요</h3>
-      <p>인쇄 대화상자에서 <b>"머리글 및 바닥글"</b> 체크를 해제하세요. 개별 서식 인쇄, 전체서식 인쇄 모두 마찬가지입니다.</p>
+      <h3 id="sec-6-3">6.3. 다른 컴퓨터에서 작업 시 기존 데이터 복원 방법</h3>
+      <p>
+        본 웹앱은 보안을 위해 외부 서버로 데이터를 전송하지 않고 현재 PC 브라우저에만 자료를 보관합니다.
+        기존 PC의 "⚙ 개인설정" 화면 아래쪽에서 <b>[⬇ 설정 백업 다운로드]</b>로 JSON 파일을 내려받은 후, 새 PC에서 <b>[⬆ 백업 파일 불러오기]</b>를 실행하면 모든 설정이 즉시 복원됩니다.
+      </p>
 
-      <h3 id="faq-recognize">영수증 인식이 갑자기 안 돼요</h3>
-      <p>구글이 가끔 특정 인식 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜬다면 이 문제일 수 있습니다.</p>
+      <h3 id="sec-6-4">6.4. '새 작업' 클릭 후 입력 내용이 지워졌을 때 대처법</h3>
+      <p>
+        해당 버튼은 다음 지출 건의 정산을 위해 입력창을 초기화하는 기능입니다. 연구과제명만 보존되고 품목 및 영수증 이미지는 완전히 삭제되므로, 작업 도중 실수로 누르지 않도록 주의하세요.
+      </p>
+
+      <h3 id="sec-6-5">6.5. 영수증 인식이 갑자기 안 될 때</h3>
+      <p>
+        구글이 가끔 특정 인식 모델의 서비스를 종료하고 새 모델로 안내합니다. 인식이 계속 "실패"로만 뜬다면 이 문제일 수 있습니다.
+      </p>
       <ol class="steps">
         <li>이 프로그램을 만들 때 쓴 Claude 대화창에 "인식 안돼"라고 말해서 원인을 확인해달라고 요청합니다.</li>
         <li>직접 확인하려면 GitHub 저장소의 <code>api/recognize.js</code> 파일에서 모델 이름이 들어간 줄을 확인합니다.</li>
         <li>오류 메시지에 "is no longer available"(더 이상 사용할 수 없음)와 새 모델명이 안내되면, 그 이름으로 이 줄만 바꾸고 GitHub에서 "Commit changes"를 누르면 자동으로 재배포됩니다.</li>
       </ol>
+    </section>
 
-      <h3>다른 컴퓨터에서 열었더니 설정이 하나도 없어요</h3>
-      <p>개인설정·연구과제·예산구분 등은 이 브라우저에만 저장됩니다. 개인설정 맨 아래에서 받아둔 백업 파일을 새 컴퓨터의 <b>⬆ 백업 파일 불러오기</b>로 올리면 그대로 복원됩니다.</p>
+    <hr class="div">
 
-      <h3>"직접 입력 / 새 작업"을 눌렀더니 입력하던 내용이 사라졌어요</h3>
-      <p>이 버튼은 확인 팝업까지 거쳐 데이터를 지우는 동작이라 되돌릴 수 없습니다. 연구과제명·과제번호만 남고 나머지는 모두 초기화됩니다. 평소 작업 중간중간 실수로 누르지 않도록 주의하세요.</p>
+    <!-- ============ CHAPTER 07. 이용약관 및 면책공지 ============ -->
+    <section class="chapter" id="chap-7">
+      <div class="chapter-head"><span class="chapter-num">CHAPTER 07</span></div>
+      <h2>7. 이용약관 및 면책공지</h2>
+      <p class="sub">본 프로그램의 사용 및 면책, 데이터 보관 규정에 관한 기본 약관입니다.</p>
 
-      <h3>서식 미리보기에서 고친 내용이 인쇄물에는 안 보여요</h3>
-      <p>미리보기 안 <span style="color:#1e4d8f;">파란 배경 칸</span>을 직접 클릭해서 고친 내용은 그 서식 자체에는 반영되지만, 1단계 기초자료 화면의 원본 값과는 별도로 관리됩니다. 여러 서식에 공통으로 들어가야 하는 값이라면 1단계에서 먼저 고치는 것이 안전합니다.</p>
+      <div class="terms-box">
+        <div class="terms-banner">이용약관 및 면책사항</div>
+        <div class="terms-body">
+          <div class="terms-article" id="sec-7-1">
+            <strong>제1조 (목적)</strong>
+            본 약관은 ‘회계 증빙 자동서식’ 웹 프로그램(이하 “본 프로그램”)의 이용과 관련하여 제작자와 사용자 간의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.
+          </div>
+
+          <div class="terms-article">
+            <strong>제2조 (무상 제공 및 무보증)</strong>
+            <ol class="terms-sublist">
+              <li>본 프로그램은 실무자의 회계 정산 서식 작성 편의를 돕기 위한 보조 도구로 무상 제공되며, 제작자는 별도의 보증 없이 "있는 그대로" 제공합니다.</li>
+              <li>제작자는 영수증 이미지 자동 인식, 서식 자동 기재, 금액 산출 결과의 완전성·정확성·신뢰성 및 특정 회계 규정 적합성에 대해 어떠한 명시적·묵시적 보증도 하지 않습니다.</li>
+            </ol>
+          </div>
+
+          <div class="terms-article" id="sec-7-2">
+            <strong>제3조 (최종 검토 책임 및 책임의 제한)</strong>
+            <ol class="terms-sublist">
+              <li>본 프로그램을 통해 작성·출력된 서식의 모든 기재 사항(금액, 품목, 일자, 비고란, 서명 등)에 대한 <b>최종 검토 및 확인 책임은 전적으로 작성자 본인</b>에게 있습니다.</li>
+              <li>제작자는 본 프로그램의 사용 또는 사용 불능, 기재 오류, 정산 반려, 데이터 손실 등으로 인해 발생한 직·간접적·특별·부수적 손해에 대해 법적 책임을 지지 않습니다.</li>
+            </ol>
+          </div>
+
+          <div class="terms-article" id="sec-7-3">
+            <strong>제4조 (사용자의 의무 및 데이터 보관)</strong>
+            <ol class="terms-sublist">
+              <li>본 프로그램은 보안 강화를 위해 서버 전송 없이 사용자의 브라우저 로컬 저장소(LocalStorage)에만 자료를 저장하므로, 사용자는 PC 변경이나 브라우저 초기화에 대비해 반드시 <b>[설정 백업] 파일을 정기적으로 직접 저장·관리</b>해야 합니다.</li>
+              <li>사용자는 본 프로그램을 상업적 목적으로 재배포·판매할 수 없으며, 악의적인 변조나 무단 역컴파일(디컴파일) 등의 행위를 할 수 없습니다.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
     </section>
 
     <div class="closing">
