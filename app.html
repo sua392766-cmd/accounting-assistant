@@ -8,6 +8,9 @@
      Cloudflare 레이트리밋 등으로 403/네트워크 오류가 발생할 수 있어 로컬에 내려받아 함께 배포합니다.
      (원본: https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js) -->
 <script src="html2pdf.bundle.min.js" onerror="window.__HTML2PDF_LOAD_FAILED__ = true;"></script>
+<!-- xlsx(SheetJS)도 같은 이유로 CDN 대신 로컬에 내려받아 함께 배포합니다.
+     (원본: https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js) -->
+<script src="xlsx.full.min.js" onerror="window.__XLSX_LOAD_FAILED__ = true;"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -835,6 +838,40 @@
   .settings-table input { width: 100%; border: none; font-size: 13px; padding: 4px; }
   .settings-table input:focus { background: #eef6ff; outline: none; }
   .settings-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  /* 예산 구분(구분1-구분2) 접이식 그룹 목록 */
+  #budgetGroupsList details {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    padding: 0 10px;
+  }
+  #budgetGroupsList summary {
+    padding: 10px 2px;
+    font-size: 13.5px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #budgetGroupsList .budget-group-body { padding: 2px 0 12px; }
+  #budgetGroupsList .budget-group-mok-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  #budgetGroupsList .budget-group-mok-row label {
+    font-size: 12.5px;
+    font-weight: bold;
+    color: #555;
+    flex-shrink: 0;
+  }
+  #budgetGroupsList .budget-group-mok-row input {
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  #budgetGroupsList .settings-table { margin-bottom: 6px; }
   .settings-list-row input {
     flex: 1; font-size: 13px; padding: 7px 9px; border: 1px solid #ccc; border-radius: 6px;
   }
@@ -1049,6 +1086,7 @@
       <h1>서식 체크리스트</h1>
       <p class="desc" title="예산 항목 성격을 선택하면 협조사항과 필요서류가 바뀝니다. 서식을 클릭해 미리보고 수정한 뒤 체크박스로 완료 표시하세요.">예산 항목 선택 → 서식 클릭해 미리보기 및 수정 → 체크박스로 완료 표시</p>
     </div>
+    <p style="margin:0 0 10px; font-size:12px; font-weight:700; color:#c33;">최종 검토 본인확인 필수</p>
     <div class="preview-split">
       <div class="checklist-col-list">
         <div class="budget-bar">
@@ -1166,12 +1204,10 @@
 
     <div class="settings-section">
       <h3>3. 예산 구분 (구분1 - 구분2)</h3>
-      <table class="settings-table">
-        <thead><tr><th>구분1</th><th>구분2</th><th></th></tr></thead>
-        <tbody id="budgetGroupsTableBody"></tbody>
-      </table>
+      <p class="desc" style="margin-bottom:10px;">구분1을 눌러 펼치면 그 아래 구분2 목록이 나옵니다. 항목이 많아지면 평소엔 접어두고 필요한 구분1만 펼쳐서 보세요.</p>
+      <div id="budgetGroupsList"></div>
       <div class="btn-row" style="margin-top:0;">
-        <button class="link-btn" onclick="addBudgetGroup()">+ 줄 추가</button>
+        <button class="link-btn" onclick="addBudgetGroup()">+ 새 구분1 추가</button>
         <button class="link-btn" onclick="downloadBudgetGroupsCsv()">⬇ CSV 다운로드</button>
         <button class="link-btn" onclick="document.getElementById('budgetGroupsImportInput').click()">⬆ CSV 업로드</button>
         <input type="file" id="budgetGroupsImportInput" accept=".csv" style="display:none" onchange="importBudgetGroupsCsv(this.files[0])">
@@ -1760,25 +1796,103 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     refreshCurrentPreview();
   }
 
-  // ---- 3. 예산 구분 (구분1 - 구분2) : 연구과제 목록과 같은 평평한(flat) 테이블 구조 ----
+  // ---- 3. 예산 구분 (구분1 - 구분2) ----
+  // 데이터는 여전히 {mok, sub} 평평한(flat) 배열이다(CSV 가져오기/내보내기, 기초자료 입력
+  // 화면의 구분1→구분2 드롭박스가 이 구조를 그대로 쓰기 때문). 화면에서만 구분1 기준으로
+  // 묶어서 <details>로 접고 펼칠 수 있게 보여준다 — 사용자마다 항목이 많이 늘어날 수 있어서다.
   function renderBudgetGroupsTable() {
-    const body = document.getElementById('budgetGroupsTableBody');
-    body.innerHTML = '';
+    const list = document.getElementById('budgetGroupsList');
+    // 다시 그리기 전에 펼쳐져 있던 구분1을 기억해뒀다가 그대로 유지한다.
+    const openMoks = Array.from(list.querySelectorAll('details[data-mok]'))
+      .filter(function (d) { return d.open; })
+      .map(function (d) { return d.getAttribute('data-mok'); });
+
+    const groups = []; // [{ mok, items: [{ sub, idx }] }] , idx는 appSettings.budgetGroups 안의 실제 위치
     appSettings.budgetGroups.forEach(function (g, idx) {
-      const tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td><input value="' + esc(g.mok) + '" oninput="onBudgetGroupInput(' + idx + ',\'mok\',this.value)"></td>' +
-        '<td><input value="' + esc(g.sub) + '" oninput="onBudgetGroupInput(' + idx + ',\'sub\',this.value)"></td>' +
-        '<td><button class="row-remove-btn" onclick="removeBudgetGroup(' + idx + ')">✕</button></td>';
-      body.appendChild(tr);
+      let group = groups.filter(function (grp) { return grp.mok === g.mok; })[0];
+      if (!group) { group = { mok: g.mok, items: [] }; groups.push(group); }
+      group.items.push({ sub: g.sub, idx: idx });
+    });
+
+    list.innerHTML = '';
+    groups.forEach(function (group) {
+      const details = document.createElement('details');
+      details.setAttribute('data-mok', group.mok);
+      if (openMoks.indexOf(group.mok) !== -1) details.open = true;
+
+      const summary = document.createElement('summary');
+      summary.textContent = (group.mok || '(구분1 미입력)') + ' (' + group.items.length + '개)';
+      details.appendChild(summary);
+
+      const body = document.createElement('div');
+      body.className = 'budget-group-body';
+
+      const mokRow = document.createElement('div');
+      mokRow.className = 'budget-group-mok-row';
+      mokRow.innerHTML =
+        '<label>구분1</label>' +
+        '<input class="budget-mok-input" value="' + esc(group.mok) + '" oninput="onBudgetGroupMokRename(this)">' +
+        '<button class="row-remove-btn" title="이 구분1 전체 삭제" onclick="removeBudgetGroupAll(this)">✕</button>';
+      body.appendChild(mokRow);
+
+      const subTable = document.createElement('table');
+      subTable.className = 'settings-table';
+      const tbody = document.createElement('tbody');
+      group.items.forEach(function (item) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><input value="' + esc(item.sub) + '" placeholder="구분2" oninput="onBudgetGroupInput(' + item.idx + ',\'sub\',this.value)"></td>' +
+          '<td><button class="row-remove-btn" onclick="removeBudgetGroup(' + item.idx + ')">✕</button></td>';
+        tbody.appendChild(tr);
+      });
+      subTable.appendChild(tbody);
+      body.appendChild(subTable);
+
+      const addSubBtn = document.createElement('button');
+      addSubBtn.type = 'button';
+      addSubBtn.className = 'link-btn';
+      addSubBtn.textContent = '+ 구분2 추가';
+      addSubBtn.onclick = function () { addBudgetSub(group.mok); };
+      body.appendChild(addSubBtn);
+
+      details.appendChild(body);
+      list.appendChild(details);
     });
   }
   function onBudgetGroupInput(idx, field, value) {
     appSettings.budgetGroups[idx][field] = value;
     saveSettings();
   }
+  // 구분1 이름 바꾸기: 같은 구분1을 쓰던 행을 전부 한꺼번에 바꾼다.
+  // (한 글자씩 입력될 때마다 전체를 다시 그리면 포커스가 끊기고 접힌 상태도 풀려버리므로,
+  //  data-mok에 저장해둔 값만 갱신하고 리스트는 다시 그리지 않는다)
+  function onBudgetGroupMokRename(inputEl) {
+    const details = inputEl.closest('details');
+    const oldMok = details.getAttribute('data-mok');
+    const newMok = inputEl.value;
+    appSettings.budgetGroups.forEach(function (g) {
+      if (g.mok === oldMok) g.mok = newMok;
+    });
+    saveSettings();
+    details.setAttribute('data-mok', newMok);
+    const count = appSettings.budgetGroups.filter(function (g) { return g.mok === newMok; }).length;
+    const summary = details.querySelector('summary');
+    if (summary) summary.textContent = (newMok || '(구분1 미입력)') + ' (' + count + '개)';
+  }
   function addBudgetGroup() {
     appSettings.budgetGroups.push({ mok: '', sub: '' });
+    saveSettings();
+    renderBudgetGroupsTable();
+    const list = document.getElementById('budgetGroupsList');
+    const last = list.lastElementChild;
+    if (last) {
+      last.open = true;
+      const input = last.querySelector('.budget-mok-input');
+      if (input) input.focus();
+    }
+  }
+  function addBudgetSub(mok) {
+    appSettings.budgetGroups.push({ mok: mok, sub: '' });
     saveSettings();
     renderBudgetGroupsTable();
   }
@@ -1786,6 +1900,15 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     appSettings.budgetGroups.splice(idx, 1);
     saveSettings();
     renderBudgetGroupsTable();
+  }
+  function removeBudgetGroupAll(btnEl) {
+    const details = btnEl.closest('details');
+    const mok = details.getAttribute('data-mok');
+    showConfirmModal('"' + (mok || '(구분1 미입력)') + '" 구분1과 그 아래 구분2 항목을 전부 삭제할까요? 되돌릴 수 없습니다.', function () {
+      appSettings.budgetGroups = appSettings.budgetGroups.filter(function (g) { return g.mok !== mok; });
+      saveSettings();
+      renderBudgetGroupsTable();
+    }, '구분1 삭제');
   }
 
   // ---- CSV 내보내기/가져오기 공용 헬퍼 (연구과제·예산구분처럼 표 형태인 목록에 사용) ----
@@ -1804,7 +1927,32 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     URL.revokeObjectURL(url);
   }
   // 쌍따옴표로 감싼 값, 쉼표 포함 값까지 처리하는 간단한 CSV 파서
+  // 필드 값이 큰따옴표로 통째로 감싸져 있으면(CSV 이스케이프 규칙) 벗기고, 안의 ""는 "로 되돌린다.
+  function stripCsvQuotes(v) {
+    const t = v.trim();
+    const m = t.match(/^"([\s\S]*)"$/);
+    return m ? m[1].replace(/""/g, '"').trim() : t;
+  }
   function parseCsv(text) {
+    // 한셀/엑셀에서 "CSV"로 저장해도 실제로는 탭으로 구분된 파일이 나오는 경우가 있는데,
+    // 그런 파일은 대개 줄 끝에 빈 칸용 쉼표가 하나 더 붙어 있거나("구분1<TAB>구분2,") 값에
+    // 쉼표가 있으면 그 줄 전체를 따옴표로 감싸버리는 등, 진짜 구분자(탭)와 쉼표 CSV 이스케이프
+    // 규칙이 뒤섞여 나온다. 이런 잡음 때문에 "쉼표/탭 중 더 많이 쓰인 쪽" 식의 단순 집계로는
+    // 구분자를 잘못 고를 수 있어, 실제 사람이 입력할 값에는 탭 문자가 거의 나올 일이 없다는
+    // 점을 이용해 "탭이 한 번이라도 있으면 탭 구분 파일"로 보고 줄 단위로 단순하게 처리한다.
+    const tabCount = (text.match(/\t/g) || []).length;
+    if (tabCount > 0) {
+      return text.split(/\r?\n/)
+        .map(function (line) {
+          let l = line.replace(/,\s*$/, ''); // 줄 끝의 빈 칸용 쉼표 제거
+          const m = l.match(/^"([\s\S]*)"$/); // 줄 전체가 따옴표로 감싸져 있으면 벗겨낸다
+          if (m) l = m[1].replace(/""/g, '"');
+          return l.split('\t').map(stripCsvQuotes);
+        })
+        .filter(function (r) { return r.some(function (v) { return v !== ''; }); });
+    }
+
+    // 쉼표 CSV: 따옴표 안의 쉼표/줄바꿈까지 제대로 처리하는 정석 파서
     const rows = [];
     let row = [], field = '', inQuotes = false;
     for (let i = 0; i < text.length; i++) {
@@ -1817,17 +1965,39 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       } else if (c === '"') {
         inQuotes = true;
       } else if (c === ',') {
-        row.push(field); field = '';
+        row.push(field.trim()); field = '';
       } else if (c === '\r') {
         // 무시 (\r\n의 \r)
       } else if (c === '\n') {
-        row.push(field); rows.push(row); row = []; field = '';
+        row.push(field.trim()); rows.push(row); row = []; field = '';
       } else {
         field += c;
       }
     }
-    if (field.length || row.length) { row.push(field); rows.push(row); }
+    if (field.length || row.length) { row.push(field.trim()); rows.push(row); }
     return rows.filter(function (r) { return r.some(function (v) { return v !== ''; }); });
+  }
+  // 업로드된 파일을 인코딩 자동 판별해서 텍스트로 읽는 공용 헬퍼
+  // (한셀/엑셀에서 CSV·TXT를 저장하면 UTF-8이 아니라 EUC-KR(CP949)로 저장되는 경우가 많아서,
+  //  UTF-8로 해석이 안 되면 EUC-KR로 다시 시도한다)
+  function readFileSmart(file, onLoad, onError) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const bytes = new Uint8Array(e.target.result);
+      let text;
+      if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+        text = new TextDecoder('utf-8').decode(bytes.subarray(3)); // BOM 제거
+      } else {
+        try {
+          text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        } catch (err) {
+          text = new TextDecoder('euc-kr').decode(bytes); // 한셀/엑셀 기본 저장 인코딩 대응
+        }
+      }
+      onLoad(text);
+    };
+    reader.onerror = function () { onError && onError(); };
+    reader.readAsArrayBuffer(file);
   }
   function downloadProjectsCsv() {
     downloadCsv('연구과제_목록.csv', ['연구과제', '과제번호'], appSettings.projects.map(function (p) {
@@ -1841,24 +2011,27 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   }
   function importBudgetGroupsCsv(file) {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const rows = parseCsv(e.target.result);
+    readFileSmart(file, function (text) {
+      const rows = parseCsv(text);
       const input = document.getElementById('budgetGroupsImportInput');
-      if (!rows.length) { alert('CSV 내용을 읽지 못했습니다.'); input.value = ''; return; }
-      const dataRows = (rows[0][0] === '구분1') ? rows.slice(1) : rows;
-      if (!confirm('지금 예산 구분 목록을 이 CSV(' + dataRows.length + '행)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
-        input.value = '';
-        return;
-      }
-      appSettings.budgetGroups = dataRows.map(function (r) { return { mok: r[0] || '', sub: r[1] || '' }; });
-      saveSettings();
-      renderBudgetGroupsTable();
       input.value = '';
-      alert('예산 구분 목록을 불러왔습니다.');
-    };
-    reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
-    reader.readAsText(file);
+      if (!rows.length) { alert('CSV 내용을 읽지 못했습니다.'); return; }
+      // 내보내기 과정에서 헤더 줄이 한 번 이상 겹쳐 들어오는 경우가 있어(예: 쉼표 버전과
+      // 탭 버전이 둘 다 남는 경우), "구분1"로 시작하는 선두 줄을 있는 만큼 전부 건너뛴다.
+      let dataRows = rows;
+      while (dataRows.length && String((dataRows[0] || [])[0] || '').trim().indexOf('구분1') === 0) {
+        dataRows = dataRows.slice(1);
+      }
+      showConfirmModal('지금 예산 구분 목록을 이 CSV(' + dataRows.length + '행)로 완전히 교체할까요? 되돌릴 수 없습니다.', function () {
+        appSettings.budgetGroups = dataRows.map(function (r) { return { mok: r[0] || '', sub: r[1] || '' }; });
+        saveSettings();
+        renderBudgetGroupsTable();
+        alert('예산 구분 목록을 불러왔습니다.');
+      }, 'CSV 업로드');
+    }, function () {
+      alert('파일을 읽지 못했습니다.');
+      document.getElementById('budgetGroupsImportInput').value = '';
+    });
   }
 
   // ---- 5. 필요서류 마스터 데이터 관리 ----
@@ -1936,20 +2109,19 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
     fileInput.onchange = function () {
       const file = fileInput.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const lines = e.target.result.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s; });
-        if (!confirm(label + ' 목록을 이 파일(' + lines.length + '줄)로 완전히 교체할까요? 되돌릴 수 없습니다.')) {
-          fileInput.value = '';
-          return;
-        }
-        setList(lines);
-        saveSettings();
-        renderDocsEditor();
-        alert(label + ' 목록을 불러왔습니다.');
-      };
-      reader.onerror = function () { alert('파일을 읽지 못했습니다.'); };
-      reader.readAsText(file);
+      readFileSmart(file, function (text) {
+        const lines = text.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(function (s) { return s; });
+        fileInput.value = '';
+        showConfirmModal(label + ' 목록을 이 파일(' + lines.length + '줄)로 완전히 교체할까요? 되돌릴 수 없습니다.', function () {
+          setList(lines);
+          saveSettings();
+          renderDocsEditor();
+          alert(label + ' 목록을 불러왔습니다.');
+        }, 'TXT 업로드');
+      }, function () {
+        alert('파일을 읽지 못했습니다.');
+        fileInput.value = '';
+      });
     };
 
     const upBtn = document.createElement('button');
@@ -2039,10 +2211,11 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
       delBtn.className = 'row-remove-btn';
       delBtn.textContent = '✕';
       delBtn.onclick = function () {
-        if (!confirm('이 도움말 항목을 삭제할까요?')) return;
-        appSettings.helpTopics.splice(idx, 1);
-        saveSettings();
-        renderHelpTopicsEditor();
+        showConfirmModal('이 도움말 항목을 삭제할까요?', function () {
+          appSettings.helpTopics.splice(idx, 1);
+          saveSettings();
+          renderHelpTopicsEditor();
+        }, '도움말 항목 삭제');
       };
 
       const titleRow = document.createElement('div');
@@ -2191,21 +2364,19 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
         document.getElementById('settingsImportInput').value = '';
         return;
       }
-      if (!confirm('지금 설정을 이 백업 파일 내용으로 덮어쓸까요? 되돌릴 수 없습니다.')) {
-        document.getElementById('settingsImportInput').value = '';
-        return;
-      }
-      const base = defaultSettings();
-      appSettings = Object.assign(base, parsed, {
-        profile: Object.assign(base.profile, parsed.profile),
-        printNotes: Object.assign(base.printNotes, parsed.printNotes),
-      });
-      appSettings.budgetGroups = migrateBudgetGroups(appSettings.budgetGroups);
-      saveSettings();
-      renderSettingsScreen();
-      renderProjectDropdownOptions();
       document.getElementById('settingsImportInput').value = '';
-      alert('설정을 불러왔습니다.');
+      showConfirmModal('지금 설정을 이 백업 파일 내용으로 덮어쓸까요? 되돌릴 수 없습니다.', function () {
+        const base = defaultSettings();
+        appSettings = Object.assign(base, parsed, {
+          profile: Object.assign(base.profile, parsed.profile),
+          printNotes: Object.assign(base.printNotes, parsed.printNotes),
+        });
+        appSettings.budgetGroups = migrateBudgetGroups(appSettings.budgetGroups);
+        saveSettings();
+        renderSettingsScreen();
+        renderProjectDropdownOptions();
+        alert('설정을 불러왔습니다.');
+      }, '설정 복원');
     };
     reader.onerror = function () {
       alert('파일을 읽지 못했습니다. 다시 시도해주세요.');
@@ -2525,17 +2696,77 @@ window.__FORM_HTML__ = {"receipt": "<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\
   })();
 
   // ---- 엑셀 업로드: 파일 선택 ----
+  // 정해진 컬럼 순서(날짜/업체명/품목명/규격/단위/단가/수량, downloadExcelTemplate과 동일)로
+  // 읽어서 receiptData를 채운다. .csv는 readFileSmart+parseCsv(인코딩·구분자 자동 판별)를,
+  // .xlsx/.xls는 SheetJS(xlsx.full.min.js, 로컬 vendored)를 사용해 파싱한다.
   function onExcelFileSelected(file) {
     if (!file) return;
     if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
       alert('엑셀 파일(.xlsx, .xls, .csv)만 업로드할 수 있습니다.');
       return;
     }
-    // ※ 2단계 연동 지점: SheetJS(xlsx)로 이 file을 파싱해 정해진 컬럼 순서
-    //   (날짜/업체명/품목명/규격/단위/단가/수량)대로 receiptData를 채울 예정입니다.
-    //   지금은 파일 선택만 연결되어 있고, 선택 후에는 오른쪽 폼에서 직접 입력하듯
-    //   값을 채우면 됩니다.
-    document.getElementById('excelUploadInput').value = '';
+    const input = document.getElementById('excelUploadInput');
+    const fail = function (msg) { alert(msg); input.value = ''; };
+
+    if (/\.csv$/i.test(file.name)) {
+      readFileSmart(file, function (text) {
+        input.value = '';
+        applyExcelRows(parseCsv(text));
+      }, function () { fail('파일을 읽지 못했습니다.'); });
+      return;
+    }
+
+    // .xlsx / .xls
+    if (typeof XLSX === 'undefined') {
+      fail('엑셀 파일을 읽는 기능을 불러오지 못했습니다. 잠시 후 다시 시도하거나, 엑셀에서 CSV로 저장해 업로드해주세요.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      let aoa;
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+      } catch (err) {
+        fail('엑셀 파일을 읽지 못했습니다. 파일이 손상되지 않았는지 확인해주세요.');
+        return;
+      }
+      input.value = '';
+      applyExcelRows(aoa);
+    };
+    reader.onerror = function () { fail('파일을 읽지 못했습니다.'); };
+    reader.readAsArrayBuffer(file);
+  }
+  // 엑셀/CSV에서 읽은 표(2차원 배열)를 받아 receiptData(날짜/업체명/품목 목록)에 채워넣는다.
+  function applyExcelRows(rows) {
+    if (!rows || !rows.length) {
+      alert('파일 내용을 읽지 못했습니다. 양식에 맞게 입력했는지 확인해주세요.');
+      return;
+    }
+    const dataRows = (String((rows[0] || [])[0] || '').trim() === '날짜') ? rows.slice(1) : rows;
+    // 품목명(3번째 칸)이 있는 행만 실제 품목 행으로 인정한다 — 그래야 손상되거나
+    // 형식이 다른 파일을 열었을 때 의미 없는 빈 품목으로 채워지는 대신 안내 문구가 뜬다.
+    const validRows = dataRows.filter(function (r) {
+      return r && String(r[2] == null ? '' : r[2]).trim() !== '';
+    });
+    if (!validRows.length) {
+      alert('엑셀/CSV에서 품목 데이터를 찾지 못했습니다. 양식(⬇ 양식)에 맞게 입력했는지 확인해주세요.');
+      return;
+    }
+    const cell = function (r, i) { return String(r[i] == null ? '' : r[i]).trim(); };
+    const first = validRows[0];
+    if (cell(first, 0)) receiptData.date = cell(first, 0);
+    if (cell(first, 1)) receiptData.vendor = cell(first, 1);
+    receiptData.items = validRows.map(function (r) {
+      return {
+        name: cell(r, 2),
+        spec: cell(r, 3),
+        unit: cell(r, 4) || '개',
+        price: cell(r, 5),
+        qty: cell(r, 6) || 1,
+      };
+    });
     skipToConfirm();
   }
 
