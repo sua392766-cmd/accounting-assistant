@@ -138,11 +138,14 @@
     </table>
   </div>
   <script>
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
     function rowHtml(item) {
       return '<tr>' +
-        '<td class="c-item" contenteditable="true">' + (item.name || '') + '</td>' +
-        '<td class="c-spec" contenteditable="true">' + (item.spec || '') + '</td>' +
-        '<td class="c-unit" contenteditable="true">' + (item.unit || '') + '</td>' +
+        '<td class="c-item" contenteditable="true">' + escHtml(item.name || '') + '</td>' +
+        '<td class="c-spec" contenteditable="true">' + escHtml(item.spec || '') + '</td>' +
+        '<td class="c-unit" contenteditable="true">' + escHtml(item.unit || '') + '</td>' +
         '<td class="c-price" contenteditable="true">' + (item.price || '') + '</td>' +
         '<td class="c-qty" contenteditable="true">' + (item.qty || '') + '</td>' +
         '<td class="c-unfilled" contenteditable="true"></td>' +
