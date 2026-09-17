@@ -15,6 +15,38 @@ export const config = {
   },
 };
 
+// Origin/Referer의 호스트가 이 요청이 온 호스트(req.headers.host)와 같은지 확인한다.
+// 도메인을 하드코딩하지 않아 Vercel 프리뷰 배포에서도 그대로 동작한다.
+// (헤더는 브라우저가 아닌 직접 호출에서는 위조될 수 있어 완벽한 인증은 아니지만,
+//  다른 웹사이트가 방문자 브라우저를 통해 이 엔드포인트를 몰래 호출하는 것과
+//  URL을 우연히 발견한 사람이 브라우저로 접근하는 것은 막아준다.)
+function isSameOriginRequest(req) {
+  const host = req.headers.host;
+  if (!host) return false;
+  const originHeader = req.headers.origin || req.headers.referer;
+  if (!originHeader) return false;
+  try {
+    return new URL(originHeader).host === host;
+  } catch {
+    return false;
+  }
+}
+
+// 서버리스 함수 인스턴스가 살아있는 동안만 유지되는 메모리 기반 레이트리밋.
+// 완벽하지 않지만(콜드스타트 시 초기화, 인스턴스별로 별도 카운트) URL 하나로
+// 짧은 시간에 대량 호출해 API 비용을 소진시키는 가장 단순한 악용은 막아준다.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+const requestLog = new Map(); // ip -> timestamps[]
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const timestamps = (requestLog.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  timestamps.push(now);
+  requestLog.set(ip, timestamps);
+  return timestamps.length > RATE_LIMIT_MAX_REQUESTS;
+}
+
 const PROMPT = `다음은 한국어 영수증 또는 거래명세서 이미지입니다. 아래 JSON 형식으로만 응답하세요.
 다른 설명, 코드블록 표시(백틱) 등은 절대 추가하지 말고 JSON 객체 하나만 출력하세요.
 
@@ -37,6 +69,17 @@ const PROMPT = `다음은 한국어 영수증 또는 거래명세서 이미지�
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  if (!isSameOriginRequest(req)) {
+    res.status(403).json({ error: '허용되지 않은 요청입니다.' });
+    return;
+  }
+
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+  if (isRateLimited(ip)) {
+    res.status(429).json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' });
     return;
   }
 
